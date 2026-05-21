@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Partner's Capital A/c</title>
+<style>
+*{ margin:0; padding:0; box-sizing:border-box; font-family:Arial,sans-serif; }
+body{ background:#f4f6fb; padding:18px; min-height:100vh; overflow-x:hidden; }
+.top-nav{ display:flex; gap:14px; margin-bottom:18px; }
+.page-btn{ padding:14px 24px; border:none; border-radius:16px; background:#111; color:white; font-size:16px; font-weight:600; cursor:pointer; box-shadow:0 4px 12px rgba(0,0,0,0.1); }
+.main-layout{ display:grid; grid-template-columns:68% 32%; gap:20px; }
+.left-panel{ background:white; padding:24px; border-radius:28px; box-shadow:0 6px 20px rgba(0,0,0,0.08); position:relative; }
+.top-buttons{ display:flex; gap:12px; margin-bottom:20px; flex-wrap:wrap; }
+.top-buttons button{ background:#111; color:white; border:none; padding:14px 20px; border-radius:16px; font-size:15px; cursor:pointer; transition:0.25s; font-weight:600; }
+.top-buttons button:hover{ transform:translateY(-3px); background:#333; }
+.tool-active{ background:#4d6fff !important; }
+.title{ text-align:center; font-size:40px; font-weight:700; margin-bottom:14px; }
+.dr-cr-bar{ display:flex; justify-content:space-between; padding:2px 4px 4px 4px; }
+.dr-label, .cr-label{ font-size:16px; font-weight:700; }
+.table-wrapper{ position:relative; overflow:auto; border-radius:4px; }
+#drawLayer{ position:absolute; top:0; left:0; z-index:2; pointer-events:none; }
+.cap-table{ border-collapse:collapse; table-layout:fixed; background:white; border:2px solid #333; width:100%; }
+.cap-table th, .cap-table td{ border:none; padding:6px 10px; position:relative; min-width:80px; }
+.partner-header th{ background:#fff; font-size:14px; font-weight:700; text-align:center; height:44px; border-bottom:2px solid #333; }
+.partner-header th:not(:last-child){ border-right:1px solid #aaa; }
+.partner-header th.mid-divider{ border-right:2px solid #333; }
+.th-name-wrap{ display:flex; align-items:center; justify-content:center; gap:4px; width:100%; }
+.partner-header th input{ width:calc(100% - 22px); border:none; outline:none; font-size:14px; font-weight:700; text-align:center; background:transparent; cursor:text; }
+.partner-header th input:focus{ background:#fff8d8; border-radius:5px; }
+.pencil-btn{ background:none; border:none; cursor:pointer; font-size:13px; color:#aaa; padding:2px 3px; line-height:1; flex-shrink:0; transition:0.15s; }
+.pencil-btn:hover{ color:#4d6fff; }
+.partner-header th.part-th{ font-size:14px; font-weight:700; }
+.cap-table tbody tr td{ height:46px; vertical-align:middle; }
+.cap-table tbody tr td:not(:last-child){ border-right:1px solid #aaa; }
+.cap-table tbody tr td.mid-divider{ border-right:2px solid #333 !important; }
+.cap-table textarea{ width:100%; height:100%; border:none; outline:none; font-size:14px; background:transparent; padding:4px 6px; cursor:text; resize:none; font-family:Arial,sans-serif; overflow:hidden; line-height:1.4; display:block; }
+.cap-table textarea:focus{ background:#fff8d8; border-radius:6px; }
+.resize-handle{ position:absolute; right:-5px; top:0; width:10px; height:100%; cursor:col-resize; z-index:20; }
+.resize-row-handle{ position:absolute; bottom:-5px; left:0; width:100%; height:10px; cursor:row-resize; z-index:20; }
+/* .total-row td{ border-top:2px solid #333 !important; background:#fafafa; font-weight:700; } */
+.total-row td{ 
+  border-top:3px double #333 !important; 
+  border-bottom:3px double #333 !important; 
+  background:#f0f4ff; 
+  font-weight:700; 
+}
+.drop-cell.drag-over{ background:#e8f0ff !important; outline:2px dashed #4d6fff; outline-offset:-2px; }
+.right-panel{ background:white; padding:24px; border-radius:28px; box-shadow:0 6px 20px rgba(0,0,0,0.08); display:flex; flex-direction:column; height:850px; overflow:hidden; }
+.cards-header{ display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; }
+.cards-header h2{ font-size:26px; }
+.cards-action-row{ display:flex; gap:10px; margin-bottom:14px; flex-wrap:wrap; }
+.save-cards-btn{ background:#1db56c; color:white; border:none; padding:11px 20px; border-radius:14px; font-size:14px; font-weight:700; cursor:pointer; transition:0.2s; }
+.save-cards-btn:hover{ background:#17a05f; transform:translateY(-2px); }
+.delete-cards-btn{ background:#ff4d4d; color:white; border:none; padding:11px 20px; border-radius:14px; font-size:14px; font-weight:700; cursor:pointer; transition:0.2s; }
+.delete-cards-btn:hover{ background:#e03d3d; transform:translateY(-2px); }
+.save-status{ font-size:12px; color:#888; align-self:center; }
+.card-input-area{ display:flex; gap:10px; margin-bottom:6px; }
+.card-input-area input{ flex:1; padding:12px; border-radius:16px; border:2px solid #ddd; font-size:14px; outline:none; transition:0.25s; }
+.card-input-area input:focus{ border-color:#4d6fff; box-shadow:0 0 0 4px rgba(77,111,255,0.12); }
+.card-input-area button{ background:#111; color:white; border:none; padding:12px 16px; border-radius:16px; font-size:14px; cursor:pointer; transition:0.25s; font-weight:bold; }
+.card-input-area button:hover{ background:#333; transform:translateY(-2px); }
+.input-hint{ font-size:11px; color:#888; margin-bottom:12px; padding:0 4px; line-height:1.5; }
+.input-hint b{ color:#4d6fff; }
+.cards-scroll{ flex:1; overflow-y:auto; padding-right:4px; }
+.cards-container{ display:flex; flex-wrap:wrap; gap:12px; align-content:flex-start; }
+.card{ width:160px; background:white; border-radius:16px; padding:10px 10px 28px; box-shadow:0 4px 14px rgba(0,0,0,0.08); border-left:6px solid #4d6fff; position:relative; transition:0.25s; user-select:none; }
+.card.cr{ border-left:6px solid #1db56c; }
+.card:hover{ transform:translateY(-4px); box-shadow:0 10px 20px rgba(0,0,0,0.12); }
+.tag{ display:inline-block; padding:3px 9px; border-radius:20px; font-size:11px; font-weight:bold; margin-bottom:5px; background:#e7edff; color:#4d6fff; }
+.card.cr .tag{ background:#dff7ea; color:#1db56c; }
+.particular{ font-size:13px; font-weight:600; line-height:1.3; margin-bottom:6px; word-break:break-word; cursor:grab; }
+.particular:active{ cursor:grabbing; }
+.card-del-btn{ position:absolute; right:7px; top:7px; background:#ffe5e5; border:none; border-radius:50%; width:20px; height:20px; font-size:12px; cursor:pointer; color:#cc0000; display:flex; align-items:center; justify-content:center; opacity:0; transition:0.2s; z-index:2; }
+.card:hover .card-del-btn{ opacity:1; }
+.card small{ position:absolute; right:8px; bottom:6px; color:#aaa; font-size:10px; }
+.amounts-row{ display:flex; flex-wrap:wrap; gap:5px; margin-top:2px; }
+.amt-chip{ display:flex; align-items:center; gap:3px; background:#f0f3ff; border:1px solid #c8d3ff; border-radius:10px; padding:3px 8px; font-size:12px; font-weight:700; color:#2244cc; cursor:grab; transition:0.15s; }
+.card.cr .amt-chip{ background:#edfff4; border-color:#a8e8c4; color:#0a7a44; }
+.amt-chip:hover{ background:#dce4ff; transform:scale(1.05); }
+.amt-chip:active{ cursor:grabbing; }
+.amt-chip .chip-label{ font-size:10px; font-weight:600; opacity:0.7; }
+.toast{ position:fixed; bottom:30px; left:50%; transform:translateX(-50%) translateY(20px); background:#111; color:#fff; padding:12px 28px; border-radius:16px; font-size:14px; font-weight:600; opacity:0; transition:all 0.3s; pointer-events:none; z-index:9999; }
+.toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
+@media(max-width:1000px){ .main-layout{ grid-template-columns:1fr; } .right-panel{ height:auto; } .title{ font-size:28px; } }
+</style>
+</head>
+<body>
+
+<div class="top-nav">
+  <button class="page-btn">Partner's Capital A/c</button>
+  <button class="page-btn" onclick="window.location.href='index.html'">&#8592; Back</button>
+</div>
+
+<div class="main-layout">
+  <div class="left-panel">
+    <div class="top-buttons">
+      <button onclick="addRow()">+ Add Row</button>
+      <button onclick="addPartner()">+ Add Partner</button>
+      <button onclick="addTotalRow()">+ Total Line</button>
+      <button id="typingBtn" onclick="setTool('typing')">&#9000; Typing</button>
+      <button id="pencilBtn" onclick="setTool('pencil')">&#9998; Pencil</button>
+      <button id="eraserBtn" onclick="setTool('eraser')">&#129657; Eraser</button>
+      <button onclick="confirmClearTable()">&#129529; Clear Table</button>
+    </div>
+    <div class="title">Partner's Capital A/c</div>
+    <div class="dr-cr-bar">
+      <span class="dr-label">Dr.</span>
+      <span class="cr-label">Cr.</span>
+    </div>
+    <div class="table-wrapper" id="tableWrapper">
+      <canvas id="drawLayer"></canvas>
+      <table class="cap-table" id="capTable">
+        <thead>
+          <tr class="partner-header" id="partnerHeader"></tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="right-panel">
+    <div class="cards-header">
+      <h2>Entry Cards</h2>
+      <p>Generate Entries</p>
+    </div>
+    <div class="cards-action-row">
+      <button class="save-cards-btn" onclick="saveCards()">💾 Save Cards</button>
+      <button class="delete-cards-btn" onclick="confirmDeleteAllCards()">🗑️ Delete All Cards</button>
+      <span class="save-status" id="saveStatus"></span>
+    </div>
+    <div class="card-input-area">
+      <input id="entryInput" placeholder="E.g. To Balance b/d 68,000 70,000"/>
+      <button onclick="generateCard()">Generate</button>
+    </div>
+    <div class="input-hint">
+      💡 <b>To Balance b/d 68,000 70,000</b> → P1=68,000 &amp; P2=70,000 &nbsp;|&nbsp;
+      <b>By General Reserve A/c(42,000 X 2:1) 28,000 14,000</b> → amounts only in columns &nbsp;|&nbsp;
+      <b>By Cash A/c(10,000+30,000) 0 0 40,000</b> → P3=40,000 (0 = skip) &nbsp;|&nbsp;
+      <b>* auto-converts to X</b>
+    </div>
+    <div class="cards-scroll">
+      <div class="cards-container" id="cardsContainer"></div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+
+/* ── STORAGE KEYS ── */
+var SK_PARTNERS = 'cap_partners';
+var SK_TABLE    = 'cap_table_data';
+var SK_CARDS    = 'cap_cards_data';
+
+/* ── TOAST ── */
+function showToast(msg){
+  var t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  setTimeout(function(){ t.classList.remove('show'); },2200);
+}
+
+/* ── STATE ── */
+var partners = ["Partner A","Partner B","Partner C"];
+var cardCount = 0;
+
+/* ── AUTO-CONVERT * TO X ── */
+document.getElementById('entryInput').addEventListener('input', function(e){
+  var pos = this.selectionStart;
+  var oldVal = this.value;
+  var newVal = oldVal.replace(/(\S)\s*\*\s*(\S)/g, '$1 X $2')
+                     .replace(/(\S)\s*\*\s*$/g, '$1 X ')
+                     .replace(/^\s*\*\s*(\S)/g, 'X $1')
+                     .replace(/\*/g, 'X');
+  if(newVal !== oldVal){
+    this.value = newVal;
+    var diff = newVal.length - oldVal.length;
+    this.setSelectionRange(pos + diff, pos + diff);
+  }
+});
+
+/* ── FORMAT INDIAN NUMBER ── */
+function formatIndianNumber(numStr){
+  if(!numStr) return '';
+  var s = numStr.replace(/,/g,'').trim();
+  if(!/^\d+$/.test(s)) return numStr;
+  if(s.length <= 3) return s;
+  var last3 = s.slice(-3);
+  var rest = s.slice(0, -3);
+  var groups = [];
+  while(rest.length > 2){ groups.unshift(rest.slice(-2)); rest = rest.slice(0,-2); }
+  if(rest) groups.unshift(rest);
+  return groups.join(',') + ',' + last3;
+}
+
+/* ─────────────────────────────────────────
+   PARSE AMOUNTS  — FIXED VERSION
+   
+   Key rules:
+   1. Numbers INSIDE parentheses are part of the particular, NOT amounts.
+   2. Only numbers OUTSIDE parentheses, at the END of the text, are amounts.
+   3. "0" counts as a positional slot → that partner gets '' (no amount).
+      So "0 0 40,000" → ['', '', '40,000']  (P3 gets 40,000)
+   4. Supports Indian comma format.
+─────────────────────────────────────────── */
+function parseAmounts(text){
+  // Check for explicit partner targeting: p3:45000
+  var explicit = text.match(/p(\d+)\s*[:\s]\s*([\d,]+)/gi);
+  if(explicit && explicit.length){
+    var result = [];
+    explicit.forEach(function(m){
+      var parts = m.match(/p(\d+)\s*[:\s]\s*([\d,]+)/i);
+      if(parts){
+        var pidx = parseInt(parts[1])-1;
+        while(result.length <= pidx) result.push('');
+        result[pidx] = parts[2];
+      }
+    });
+    return result;
+  }
+
+  // ── Step 1: Remove content inside ALL parentheses ──
+  // This prevents numbers like (42,000 X 2:1) or (10,000+30,000) from being picked up
+  var withoutParens = text.replace(/\([^)]*\)/g, function(m){
+    return ' '.repeat(m.length); // preserve positions with spaces
+  });
+
+  // ── Step 2: Also strip the number that sometimes appears RIGHT AFTER a closing paren ──
+  // e.g. ")28,000" — the 28,000 here is the result of the paren expression,
+  // it will appear as a trailing amount already, but we need to make sure
+  // the paren-stripped text doesn't re-include it. (Already handled by step 1 keeping positions.)
+
+  // ── Step 3: Find ALL trailing numbers (outside parens) ──
+  // A trailing number = a standalone number (with optional Indian commas) at the end
+  // preceded only by whitespace and other numbers
+  // Pattern matches: digits with optional Indian comma grouping
+  var numRe = /(?:^|\s)(0|\d{1,3}(?:,\d{2,3})+|\d{2,})(?=(?:\s+(?:0|\d{1,3}(?:,\d{2,3})+|\d{2,}))*\s*$)/g;
+  var found = [];
+  var m;
+  while((m = numRe.exec(withoutParens)) !== null){
+    found.push(m[1]);
+  }
+
+  // ── Step 4: Convert 0 → '' (means "this partner has no amount / skip slot") ──
+  var result = found.map(function(n){
+    if(n === '0' || n === '0,0' ) return '';   // explicit zero = no amount for this partner
+    if(n.indexOf(',') !== -1) return n;         // already Indian-formatted, keep as-is
+    return n;                                   // plain number, will be formatted later
+  });
+
+  return result;
+}
+
+/* ─────────────────────────────────────────
+   PARSE PARTICULARS — FIXED VERSION
+
+   Key rules:
+   1. Keep everything INSIDE parentheses (including numbers, operators).
+   2. Remove To/By prefix.
+   3. Strip trailing standalone amounts that are OUTSIDE parentheses.
+   4. Also strip any number that appears directly after a closing paren
+      like ")28,000" — that number is an amount, not part of the particular.
+─────────────────────────────────────────── */
+function parseParticulars(text){
+  var t = text.replace(/^(to|by)\s+/i, '').trim();
+
+  // Replace * with X
+  t = t.replace(/\s*\*\s*/g, ' X ').replace(/\s+/g, ' ').trim();
+
+  // ── Strip numbers that appear RIGHT AFTER a closing paren ──
+  // e.g. "General Reserve A/c(42,000 X 2:1)28,000" → "General Reserve A/c(42,000 X 2:1)"
+  // These are amounts that leaked out of the paren expression.
+  t = t.replace(/\)\s*[\d,]+/g, ')');
+
+  // ── Now strip trailing standalone numbers OUTSIDE parentheses ──
+  // Strategy: mask parens, strip trailing numbers, restore parens
+
+  // Collect all paren content with their positions in t
+  var parenSegments = [];
+  var parenRe = /\([^)]*\)/g;
+  var pm;
+  while((pm = parenRe.exec(t)) !== null){
+    parenSegments.push({ start: pm.index, end: pm.index + pm[0].length, val: pm[0] });
+  }
+
+  // Build masked version (replace paren content with placeholder of same length)
+  var masked = '';
+  var lastIdx = 0;
+  parenSegments.forEach(function(seg){
+    masked += t.slice(lastIdx, seg.start);
+    masked += '\x00'.repeat(seg.val.length);
+    lastIdx = seg.end;
+  });
+  masked += t.slice(lastIdx);
+
+  // Strip trailing standalone numbers/zeros from masked string
+  var cleaned = masked.replace(/(?:\s+(?:0|\d{1,3}(?:,\d{2,3})+|\d+))+\s*$/, '').trim();
+
+  // Restore paren segments back into cleaned string
+  var result = '';
+  var pIdx = 0;
+  var i = 0;
+  while(i < cleaned.length){
+    if(cleaned[i] === '\x00'){
+      if(pIdx < parenSegments.length){
+        result += parenSegments[pIdx].val;
+        i += parenSegments[pIdx].val.length;
+        pIdx++;
+      } else {
+        i++;
+      }
+    } else {
+      result += cleaned[i];
+      i++;
+    }
+  }
+
+  return result.trim();
+}
+
+/* ── SAVE TABLE ── */
+function saveTable(){
+  localStorage.setItem(SK_PARTNERS, JSON.stringify(partners));
+  var rows=[];
+  document.querySelectorAll('#tableBody tr').forEach(function(tr){
+    var cells=[];
+    tr.querySelectorAll('textarea').forEach(function(ta){ cells.push(ta.value); });
+    var heights=[];
+    tr.querySelectorAll('td').forEach(function(td){ heights.push(td.style.height||''); });
+    rows.push({cells:cells, heights:heights, isTotal: tr.classList.contains('total-row')});
+  });
+  localStorage.setItem(SK_TABLE, JSON.stringify(rows));
+}
+
+/* ── LOAD TABLE ── */
+function loadTable(){
+  var pRaw = localStorage.getItem(SK_PARTNERS);
+  if(pRaw) partners = JSON.parse(pRaw);
+  buildTable();
+  var tRaw = localStorage.getItem(SK_TABLE);
+  if(tRaw){
+    var rows = JSON.parse(tRaw);
+    var tbody = document.getElementById('tableBody');
+    tbody.innerHTML='';
+    rows.forEach(function(rowData){
+      if(rowData.isTotal) addTotalBodyRow(tbody, rowData);
+      else addBodyRow(tbody, rowData);
+    });
+  }
+  setupDropZones();
+  setupResize();
+  resizeCanvas();
+}
+
+/* ── BUILD TABLE ── */
+function buildTable(){
+  buildHeader();
+  var tbody=document.getElementById('tableBody');
+  tbody.innerHTML='';
+  for(var i=0;i<5;i++) addBodyRow(tbody, null);
+  setupDropZones();
+  setupResize();
+  resizeCanvas();
+}
+
+/* ── HEADER ── */
+function buildHeader(){
+  var hdr=document.getElementById('partnerHeader');
+  hdr.innerHTML='';
+
+  var th0=document.createElement('th');
+  th0.className='part-th'; th0.style.width='160px';
+  th0.innerHTML="Particulars<div class='resize-handle'></div>";
+  hdr.appendChild(th0);
+
+  partners.forEach(function(p,i){
+    var th=document.createElement('th');
+    if(i===partners.length-1) th.classList.add('mid-divider');
+    th.style.width='100px';
+    th.appendChild(makePartnerThContent(p,i));
+    var rh=document.createElement('div'); rh.className='resize-handle';
+    th.appendChild(rh);
+    hdr.appendChild(th);
+  });
+
+  var th1=document.createElement('th');
+  th1.className='part-th'; th1.style.width='160px';
+  th1.innerHTML="Particulars<div class='resize-handle'></div>";
+  hdr.appendChild(th1);
+
+  partners.forEach(function(p,i){
+    var th=document.createElement('th');
+    th.style.width='100px';
+    th.appendChild(makePartnerThContent(p,i));
+    var rh=document.createElement('div'); rh.className='resize-handle';
+    th.appendChild(rh);
+    hdr.appendChild(th);
+  });
+
+  setupResize();
+}
+
+function makePartnerThContent(name,pIdx){
+  var wrap=document.createElement('div'); wrap.className='th-name-wrap';
+  var inp=document.createElement('input');
+  inp.value=name; inp.title='Click to edit partner name';
+  inp.addEventListener('change',function(){
+    partners[pIdx]=this.value.trim()||partners[pIdx];
+    this.value=partners[pIdx];
+    syncPartnerInputs(pIdx);
+    saveTable();
+  });
+  inp.addEventListener('keydown',function(e){ if(e.key==='Enter') this.blur(); });
+  var btn=document.createElement('button');
+  btn.className='pencil-btn'; btn.title='Edit partner name'; btn.innerHTML='&#9998;';
+  btn.addEventListener('click',function(){ inp.focus(); inp.select(); });
+  wrap.appendChild(inp); wrap.appendChild(btn);
+  return wrap;
+}
+
+function syncPartnerInputs(pIdx){
+  document.querySelectorAll('.th-name-wrap').forEach(function(wrap,i){
+    if(i%partners.length===pIdx){
+      var inp=wrap.querySelector('input');
+      if(inp) inp.value=partners[pIdx];
+    }
+  });
+}
+
+/* ── BODY ROWS ── */
+function makeCell(isMid){
+  var td=document.createElement('td');
+  td.className='drop-cell';
+  if(isMid) td.classList.add('mid-divider');
+  td.innerHTML="<textarea rows='1'></textarea><div class='resize-row-handle'></div>";
+  return td;
+}
+
+function addBodyRow(tbody, data){
+  var tr=document.createElement('tr');
+  tr.appendChild(makeCell(false));
+  partners.forEach(function(p,i){ tr.appendChild(makeCell(i===partners.length-1)); });
+  tr.appendChild(makeCell(false));
+  partners.forEach(function(){ tr.appendChild(makeCell(false)); });
+  tbody.appendChild(tr);
+
+  if(data){
+    var tas=tr.querySelectorAll('textarea');
+    data.cells.forEach(function(v,i){ if(tas[i]) tas[i].value=v; });
+    var tds=tr.querySelectorAll('td');
+    data.heights.forEach(function(h,i){ if(tds[i]&&h) tds[i].style.height=h; });
+  }
+
+  tr.querySelectorAll('textarea').forEach(function(ta){
+    ta.addEventListener('input', function(){ saveTable(); });
+  });
+}
+
+/* ── TOTAL ROW ── */
+function addTotalBodyRow(tbody, data){
+  var tr=document.createElement('tr');
+  tr.classList.add('total-row');
+  tr.appendChild(makeCell(false));
+  partners.forEach(function(p,i){ tr.appendChild(makeCell(i===partners.length-1)); });
+  tr.appendChild(makeCell(false));
+  partners.forEach(function(){ tr.appendChild(makeCell(false)); });
+  tbody.appendChild(tr);
+
+  if(data){
+    var tas=tr.querySelectorAll('textarea');
+    data.cells.forEach(function(v,i){ if(tas[i]) tas[i].value=v; });
+    var tds=tr.querySelectorAll('td');
+    data.heights.forEach(function(h,i){ if(tds[i]&&h) tds[i].style.height=h; });
+  }
+
+  tr.querySelectorAll('textarea').forEach(function(ta){
+    ta.addEventListener('input', function(){ saveTable(); });
+  });
+}
+
+function addTotalRow(){
+  addTotalBodyRow(document.getElementById('tableBody'), null);
+  setupDropZones();
+  setupResize();
+  resizeCanvas();
+  saveTable();
+  showToast('Total line added!');
+}
+
+function addRow(){
+  addBodyRow(document.getElementById('tableBody'), null);
+  setupDropZones();
+  setupResize();
+  resizeCanvas();
+  saveTable();
+}
+
+function addPartner(){
+  var name=prompt('Enter Partner Name:');
+  if(!name||!name.trim()) return;
+  partners.push(name.trim());
+  var rows=[];
+  document.querySelectorAll('#tableBody tr').forEach(function(tr){
+    var cells=[]; tr.querySelectorAll('textarea').forEach(function(ta){ cells.push(ta.value); });
+    rows.push({cells:cells,heights:[],isTotal:tr.classList.contains('total-row')});
+  });
+  buildHeader();
+  var tbody=document.getElementById('tableBody');
+  tbody.innerHTML='';
+  rows.forEach(function(rd){
+    if(rd.isTotal) addTotalBodyRow(tbody,rd);
+    else addBodyRow(tbody,rd);
+  });
+  setupDropZones(); setupResize(); resizeCanvas(); saveTable();
+}
+
+function confirmClearTable(){
+  if(!confirm('Clear the table? Cards will NOT be deleted.')) return;
+  document.querySelectorAll('.cap-table textarea').forEach(function(t){ t.value=''; });
+  var tbody=document.getElementById('tableBody');
+  while(tbody.rows.length>5) tbody.deleteRow(tbody.rows.length-1);
+  saveTable(); showToast('Table cleared!');
+}
+
+/* ── CARDS SAVE / LOAD ── */
+function saveCards(){
+  var cards=[];
+  document.querySelectorAll('#cardsContainer .card').forEach(function(card){
+    cards.push({
+      type: card.dataset.type,
+      particulars: card.dataset.particulars,
+      amounts: JSON.parse(card.dataset.amounts||'[]')
+    });
+  });
+  localStorage.setItem(SK_CARDS, JSON.stringify(cards));
+  var now=new Date();
+  document.getElementById('saveStatus').textContent='Saved at '+now.getHours()+':'+String(now.getMinutes()).padStart(2,'0');
+  showToast('Cards saved! ✅');
+}
+
+function loadCards(){
+  var raw=localStorage.getItem(SK_CARDS);
+  if(!raw) return;
+  JSON.parse(raw).forEach(function(c){ createCard(c.type, c.particulars, c.amounts||[]); });
+}
+
+function confirmDeleteAllCards(){
+  if(!confirm('Delete ALL saved cards? This cannot be undone.')) return;
+  document.getElementById('cardsContainer').innerHTML='';
+  localStorage.removeItem(SK_CARDS);
+  document.getElementById('saveStatus').textContent='';
+  showToast('All cards deleted!');
+}
+
+/* ── CREATE CARD ── */
+function createCard(type, particulars, amounts){
+  var card=document.createElement('div');
+  cardCount++;
+  card.id='card'+cardCount;
+  card.dataset.type=type;
+  card.dataset.particulars=particulars;
+  card.dataset.amounts=JSON.stringify(amounts);
+  card.className=type==='DR'?'card':'card cr';
+
+  var delBtn=document.createElement('button');
+  delBtn.className='card-del-btn'; delBtn.title='Delete card'; delBtn.textContent='✕';
+  delBtn.addEventListener('click',function(e){
+    e.stopPropagation();
+    if(confirm('Delete this card?')){ card.remove(); }
+  });
+
+  var tagEl=document.createElement('div');
+  tagEl.className='tag'; tagEl.textContent=type;
+
+  var partEl=document.createElement('div');
+  partEl.className='particular';
+  partEl.textContent=particulars;
+
+  var amountsRow=document.createElement('div');
+  amountsRow.className='amounts-row';
+
+  function rebuildChips(){
+    var savedAmts=JSON.parse(card.dataset.amounts||'[]');
+    amountsRow.innerHTML='';
+    savedAmts.forEach(function(amt,idx){
+      var chip=document.createElement('div');
+      chip.className='amt-chip';
+      var lbl=document.createElement('span'); lbl.className='chip-label'; lbl.textContent='P'+(idx+1)+': ';
+      var val=document.createElement('span');
+      if(!amt || amt==='' || amt==='0'){
+        val.textContent='-';
+        chip.style.opacity='0.5';
+      } else {
+        val.textContent='₹'+amt;
+      }
+      chip.appendChild(lbl); chip.appendChild(val);
+      amountsRow.appendChild(chip);
+    });
+  }
+
+  rebuildChips();
+
+  var dragHint=document.createElement('small');
+  dragHint.textContent='Drag Me';
+
+  card.appendChild(delBtn);
+  card.appendChild(tagEl);
+  card.appendChild(partEl);
+  card.appendChild(amountsRow);
+  card.appendChild(dragHint);
+
+  card.draggable=true;
+  card.addEventListener('dragstart',function(e){
+    e.dataTransfer.setData('text/plain', JSON.stringify({ cardId: card.id }));
+  });
+
+  document.getElementById('cardsContainer').appendChild(card);
+}
+
+/* ── GENERATE CARD from input ── */
+function generateCard(){
+  var input=document.getElementById('entryInput');
+  if(!input.value.trim()) return;
+  var text=input.value.trim();
+
+  // Replace any remaining * with X (safety net)
+  text = text.replace(/\s*\*\s*/g, ' X ').replace(/\s+/g, ' ').trim();
+
+  var type=text.toLowerCase().startsWith('by ')?'CR':'DR';
+  var particulars=parseParticulars(text);
+  var amounts=parseAmounts(text);
+
+  // Format non-zero amounts to Indian format
+  var formattedAmounts = amounts.map(function(a){
+    if(!a || a==='') return '';
+    if(a.indexOf(',') !== -1) return a;   // already formatted
+    return formatIndianNumber(a);
+  });
+
+  createCard(type, particulars, formattedAmounts);
+  input.value='';
+}
+
+document.getElementById('entryInput').addEventListener('keypress',function(e){ if(e.key==='Enter') generateCard(); });
+
+/* ── DROP ZONES ── */
+function setupDropZones(){
+  document.querySelectorAll('.drop-cell').forEach(function(cell){
+    if(cell._dropSetup) return;
+    cell._dropSetup=true;
+
+    cell.addEventListener('dragenter',function(e){
+      e.preventDefault();
+      Array.from(cell.parentElement.querySelectorAll('td')).forEach(function(td){ td.classList.add('drag-over'); });
+    });
+    cell.addEventListener('dragleave',function(e){
+      if(!cell.parentElement.contains(e.relatedTarget)){
+        Array.from(cell.parentElement.querySelectorAll('td')).forEach(function(td){ td.classList.remove('drag-over'); });
+      }
+    });
+    cell.addEventListener('dragover',function(e){ e.preventDefault(); });
+
+    cell.addEventListener('drop',function(e){
+      e.preventDefault();
+      Array.from(cell.parentElement.querySelectorAll('td')).forEach(function(td){ td.classList.remove('drag-over'); });
+
+      var raw=e.dataTransfer.getData('text/plain');
+      if(!raw) return;
+      var data; try{ data=JSON.parse(raw); } catch(ex){ return; }
+
+      var card=document.getElementById(data.cardId);
+      if(!card) return;
+
+      var n=partners.length;
+      var allCells=Array.from(cell.parentElement.querySelectorAll('td'));
+      var colIdx=allCells.indexOf(cell);
+
+      var isCrSide = colIdx > n;
+      var particularsColIdx = isCrSide ? n+1 : 0;
+
+      var parts = card.dataset.particulars;
+      var type  = card.dataset.type;
+      var amts  = JSON.parse(card.dataset.amounts||'[]');
+      var prefix = type==='DR' ? 'To ' : 'By ';
+
+      var partTa = allCells[particularsColIdx] && allCells[particularsColIdx].querySelector('textarea');
+      if(partTa) partTa.value = prefix + parts;
+
+      for(var idx=0; idx<n; idx++){
+        var amtColIdx = isCrSide ? (n+2+idx) : (1+idx);
+        var amtTa = allCells[amtColIdx] && allCells[amtColIdx].querySelector('textarea');
+        if(amtTa){
+          var amt = amts[idx];
+          if(!amt || amt === '' || amt === '0'){
+            amtTa.value = '-';
+          } else {
+            amtTa.value = amt;
+          }
+        }
+      }
+
+      saveTable();
+      showToast('Entry placed! ✅');
+    });
+  });
+}
+
+/* ── RESIZE ── */
+function setupResize(){
+  document.querySelectorAll('.resize-handle').forEach(function(handle){
+    if(handle._rSetup) return; handle._rSetup=true;
+    handle.onmousedown=function(e){
+      e.preventDefault(); e.stopPropagation();
+      var th=handle.parentElement,startX=e.pageX,startW=th.offsetWidth;
+      function onMove(e){ var w=Math.max(60,startW+(e.pageX-startX)); th.style.width=w+'px'; th.style.minWidth=w+'px'; resizeCanvas(); }
+      function onUp(){ document.removeEventListener('mousemove',onMove); document.removeEventListener('mouseup',onUp); saveTable(); }
+      document.addEventListener('mousemove',onMove); document.addEventListener('mouseup',onUp);
+    };
+  });
+  document.querySelectorAll('.resize-row-handle').forEach(function(handle){
+    if(handle._rrSetup) return; handle._rrSetup=true;
+    handle.onmousedown=function(e){
+      e.preventDefault(); e.stopPropagation();
+      var tr=handle.parentElement.parentElement,tds=tr.querySelectorAll('td'),startY=e.pageY,startH=tr.getBoundingClientRect().height;
+      function onMove(e){ var h=Math.max(36,startH+(e.pageY-startY)); tds.forEach(function(td){ td.style.height=h+'px'; }); }
+      function onUp(){ document.removeEventListener('mousemove',onMove); document.removeEventListener('mouseup',onUp); resizeCanvas(); saveTable(); }
+      document.addEventListener('mousemove',onMove); document.addEventListener('mouseup',onUp);
+    };
+  });
+}
+
+/* ── CANVAS / DRAW ── */
+var canvas=document.getElementById('drawLayer');
+var wrapper=document.getElementById('tableWrapper');
+var ctx=canvas.getContext('2d');
+function resizeCanvas(){
+  var imgData=null;
+  if(canvas.width>0&&canvas.height>0){ try{ imgData=ctx.getImageData(0,0,canvas.width,canvas.height); }catch(e){} }
+  canvas.width=wrapper.scrollWidth; canvas.height=wrapper.scrollHeight;
+  if(imgData) try{ ctx.putImageData(imgData,0,0); }catch(e){}
+}
+resizeCanvas();
+window.addEventListener('resize',resizeCanvas);
+
+var drawing=false, tool='typing';
+function setTool(t){
+  tool=t;
+  ['typingBtn','pencilBtn','eraserBtn'].forEach(function(id){ document.getElementById(id).classList.remove('tool-active'); });
+  if(t==='typing'){ canvas.style.pointerEvents='none'; canvas.style.zIndex='0'; document.getElementById('typingBtn').classList.add('tool-active'); }
+  else if(t==='pencil'){ canvas.style.pointerEvents='auto'; canvas.style.zIndex='99'; canvas.style.cursor='crosshair'; document.getElementById('pencilBtn').classList.add('tool-active'); }
+  else { canvas.style.pointerEvents='auto'; canvas.style.zIndex='99'; canvas.style.cursor='cell'; document.getElementById('eraserBtn').classList.add('tool-active'); }
+}
+setTool('typing');
+
+function getBelow(e){ canvas.style.pointerEvents='none'; var el=document.elementFromPoint(e.clientX,e.clientY); canvas.style.pointerEvents=tool==='typing'?'none':'auto'; return el; }
+canvas.addEventListener('dragover',function(e){ e.preventDefault(); var el=getBelow(e); if(el) el.dispatchEvent(new DragEvent('dragover',{bubbles:true,cancelable:true,dataTransfer:e.dataTransfer})); });
+canvas.addEventListener('drop',function(e){ e.preventDefault(); var el=getBelow(e); if(el) el.dispatchEvent(new DragEvent('drop',{bubbles:true,cancelable:true,dataTransfer:e.dataTransfer})); });
+canvas.addEventListener('mousedown',function(e){ if(tool==='typing') return; drawing=true; ctx.beginPath(); ctx.moveTo(e.offsetX,e.offsetY); });
+window.addEventListener('mousemove',function(e){
+  if(!drawing) return;
+  var r=canvas.getBoundingClientRect();
+  ctx.lineCap='round'; ctx.lineJoin='round';
+  if(tool==='eraser'){ ctx.globalCompositeOperation='destination-out'; ctx.lineWidth=30; }
+  else { ctx.globalCompositeOperation='source-over'; ctx.strokeStyle='#111'; ctx.lineWidth=2.5; }
+  ctx.lineTo(e.clientX-r.left,e.clientY-r.top); ctx.stroke();
+});
+window.addEventListener('mouseup',function(){ if(!drawing) return; drawing=false; ctx.beginPath(); });
+
+/* ── INIT ── */
+loadTable();
+loadCards();
+
+</script>
+</body>
+</html>
