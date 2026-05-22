@@ -457,7 +457,10 @@ function generateCard(){
   var rawAmount = amountMatch ? amountMatch[1] : '';
   var numericAmount = rawAmount ? Number(stripCommas(rawAmount)) : '';
   var displayAmount = numericAmount !== '' ? formatIndian(numericAmount) : '';
-  var particulars = rawText
+  
+  var prefixWord = rawText.match(/^(to|by)\s+/i);
+  var prefix = prefixWord ? prefixWord[1].charAt(0).toUpperCase() + prefixWord[1].slice(1).toLowerCase() + ' ' : '';
+  var particulars = prefix + rawText
     .replace(/^to\s+/i,'')
     .replace(/^by\s+/i,'')
     .replace(/([\d,]+)\s*$/,'')
