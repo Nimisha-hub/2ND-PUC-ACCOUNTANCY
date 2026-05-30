@@ -114,16 +114,18 @@ body{ background:#f4f6fb; padding:18px; min-height:100vh; overflow-x:hidden; }
       <button id="eraserBtn" onclick="setTool('eraser')">&#129657; Eraser</button>
       <button onclick="confirmClearTable()">&#129529; Clear Table</button>
     </div>
-    <div class="title">Balance Sheet</div>
+    <!-- <div class="title">Balance Sheet</div> -->
+     <div class="title">Balance Sheet</div>
+<div class="bs-date" id="bsDate" contenteditable="true" style="text-align:center;font-size:16px;font-weight:600;color:#444;margin-bottom:14px;outline:none;">As at 31/03/2025</div>
     <div class="table-wrapper" id="tableWrapper">
       <canvas id="drawLayer"></canvas>
       <table class="cap-table" id="capTable">
         <thead>
           <tr id="headerRow">
             <th style="width:200px;">Liabilities<div class="resize-handle"></div></th>
-            <th class="amt-th mid-divider">Amount<div class="resize-handle"></div></th>
-            <th style="width:200px;">Assets<div class="resize-handle"></div></th>
-            <th class="amt-th">Amount<div class="resize-handle"></div></th>
+<th class="amt-th mid-divider">Amount (Rs.)<div class="resize-handle"></div></th>
+<th style="width:200px;">Assets<div class="resize-handle"></div></th>
+<th class="amt-th">Amount (Rs.)<div class="resize-handle"></div></th>
           </tr>
         </thead>
         <tbody id="tableBody"></tbody>
