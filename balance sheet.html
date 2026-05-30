@@ -15,6 +15,7 @@ body{ background:#f4f6fb; padding:18px; min-height:100vh; overflow-x:hidden; }
 .top-buttons button{ background:#111; color:white; border:none; padding:14px 20px; border-radius:16px; font-size:15px; cursor:pointer; transition:0.25s; font-weight:600; }
 .top-buttons button:hover{ transform:translateY(-3px); background:#333; }
 .tool-active{ background:#4d6fff !important; }
+/* .title{ text-align:center; font-size:40px; font-weight:700; margin-bottom:14px; } */
 .title{ text-align:center; font-size:40px; font-weight:700; margin-bottom:14px; }
 
 .table-wrapper{ position:relative; overflow:auto; border-radius:4px; }
@@ -115,8 +116,8 @@ body{ background:#f4f6fb; padding:18px; min-height:100vh; overflow-x:hidden; }
       <button onclick="confirmClearTable()">&#129529; Clear Table</button>
     </div>
     <!-- <div class="title">Balance Sheet</div> -->
-     <div class="title">Balance Sheet</div>
-<div class="bs-date" id="bsDate" contenteditable="true" style="text-align:center;font-size:16px;font-weight:600;color:#444;margin-bottom:14px;outline:none;">As at 31/03/2025</div>
+     <!-- <div class="title">Balance Sheet</div> -->
+<div class="title" id="bsDate" contenteditable="true" style="text-align:center;font-size:40px;font-weight:700;margin-bottom:14px;outline:none;">Balance Sheet As at 31/03/2025</div>
     <div class="table-wrapper" id="tableWrapper">
       <canvas id="drawLayer"></canvas>
       <table class="cap-table" id="capTable">
