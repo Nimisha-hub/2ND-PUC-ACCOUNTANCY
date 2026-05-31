@@ -219,6 +219,25 @@ function saveTable(){
   localStorage.setItem(STORAGE_TOTALS, JSON.stringify(totals));
 }
 
+function autoResizeTextarea(ta) {
+  ta.style.height = 'auto';
+  ta.style.height = ta.scrollHeight + 'px';
+  var td = ta.closest('td');
+  if (td) {
+    td.style.height = ta.scrollHeight + 'px';
+    var tr = td.parentElement;
+    if (tr) {
+      var maxH = 0;
+      tr.querySelectorAll('td').forEach(function(cell) {
+        if (cell.offsetHeight > maxH) maxH = cell.offsetHeight;
+      });
+      tr.querySelectorAll('td').forEach(function(cell) {
+        cell.style.height = maxH + 'px';
+      });
+    }
+  }
+}
+
 function loadTable(){
   var raw=localStorage.getItem(STORAGE_TABLE);
   var totRaw=localStorage.getItem(STORAGE_TOTALS);
@@ -255,7 +274,8 @@ function addRow(silent, data){
 
 function setupAutoSave(row){
   row.querySelectorAll('textarea').forEach(function(ta){
-    ta.addEventListener('input', function(){ saveTable(); });
+    // ta.addEventListener('input', function(){ saveTable(); });
+    ta.addEventListener('input', function(){ autoResizeTextarea(ta); saveTable(); });
   });
 }
 
@@ -627,14 +647,25 @@ function dropCardIntoCell(cell){
   var inputs = cell.parentElement.querySelectorAll('textarea');
   var fullParticular = buildParticularText(card);
 
+  // if(card.dataset.type === 'DR'){
+  //   inputs[0].value = fullParticular;
+  //   inputs[1].value = card.dataset.amount;
+  // } else {
+  //   inputs[2].value = fullParticular;
+  //   inputs[3].value = card.dataset.amount;
+  // }
+
   if(card.dataset.type === 'DR'){
     inputs[0].value = fullParticular;
     inputs[1].value = card.dataset.amount;
+    autoResizeTextarea(inputs[0]);
+    autoResizeTextarea(inputs[1]);
   } else {
     inputs[2].value = fullParticular;
     inputs[3].value = card.dataset.amount;
+    autoResizeTextarea(inputs[2]);
+    autoResizeTextarea(inputs[3]);
   }
-
   card.remove();
   cancelSelection();
   calculateTotals();
@@ -678,12 +709,23 @@ function setupDropZones(){
       if(!card) return;
       var inputs=cell.parentElement.querySelectorAll('textarea');
       var fullParticular = buildParticularText(card);
+      // if(card.dataset.type==='DR'){
+      //   inputs[0].value = fullParticular;
+      //   inputs[1].value = card.dataset.amount;
+      // } else {
+      //   inputs[2].value = fullParticular;
+      //   inputs[3].value = card.dataset.amount;
+      // }
       if(card.dataset.type==='DR'){
         inputs[0].value = fullParticular;
         inputs[1].value = card.dataset.amount;
+        autoResizeTextarea(inputs[0]);
+        autoResizeTextarea(inputs[1]);
       } else {
         inputs[2].value = fullParticular;
         inputs[3].value = card.dataset.amount;
+        autoResizeTextarea(inputs[2]);
+        autoResizeTextarea(inputs[3]);
       }
       card.classList.remove('selected');
       card.remove();

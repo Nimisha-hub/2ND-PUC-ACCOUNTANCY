@@ -452,8 +452,11 @@ function addBodyRow(tbody, data){
     data.heights.forEach(function(h,i){ if(tds[i]&&h) tds[i].style.height=h; });
   }
 
+  // tr.querySelectorAll('textarea').forEach(function(ta){
+  //   ta.addEventListener('input', function(){ saveTable(); });
+  // });
   tr.querySelectorAll('textarea').forEach(function(ta){
-    ta.addEventListener('input', function(){ saveTable(); });
+    ta.addEventListener('input', function(){ autoResizeTextarea(ta); saveTable(); });
   });
 }
 
@@ -684,8 +687,24 @@ function setupDropZones(){
       var amts  = JSON.parse(card.dataset.amounts||'[]');
       var prefix = type==='DR' ? 'To ' : 'By ';
 
-      var partTa = allCells[particularsColIdx] && allCells[particularsColIdx].querySelector('textarea');
-      if(partTa) partTa.value = prefix + parts;
+      // var partTa = allCells[particularsColIdx] && allCells[particularsColIdx].querySelector('textarea');
+      // if(partTa) partTa.value = prefix + parts;
+
+      // for(var idx=0; idx<n; idx++){
+      //   var amtColIdx = isCrSide ? (n+2+idx) : (1+idx);
+      //   var amtTa = allCells[amtColIdx] && allCells[amtColIdx].querySelector('textarea');
+      //   if(amtTa){
+      //     var amt = amts[idx];
+      //     if(!amt || amt === '' || amt === '0'){
+      //       amtTa.value = '-';
+      //     } else {
+      //       amtTa.value = amt;
+      //     }
+      //   }
+      // }
+
+    var partTa = allCells[particularsColIdx] && allCells[particularsColIdx].querySelector('textarea');
+      if(partTa){ partTa.value = prefix + parts; autoResizeTextarea(partTa); }
 
       for(var idx=0; idx<n; idx++){
         var amtColIdx = isCrSide ? (n+2+idx) : (1+idx);
@@ -697,6 +716,7 @@ function setupDropZones(){
           } else {
             amtTa.value = amt;
           }
+          autoResizeTextarea(amtTa);
         }
       }
 
@@ -766,6 +786,20 @@ window.addEventListener('mousemove',function(e){
   ctx.lineTo(e.clientX-r.left,e.clientY-r.top); ctx.stroke();
 });
 window.addEventListener('mouseup',function(){ if(!drawing) return; drawing=false; ctx.beginPath(); });
+function autoResizeTextarea(ta){
+  ta.style.height='auto';
+  ta.style.height=ta.scrollHeight+'px';
+  var td=ta.closest('td');
+  if(td){
+    td.style.height=ta.scrollHeight+'px';
+    var tr=td.parentElement;
+    if(tr){
+      var maxH=0;
+      tr.querySelectorAll('td').forEach(function(cell){ if(cell.offsetHeight>maxH) maxH=cell.offsetHeight; });
+      tr.querySelectorAll('td').forEach(function(cell){ cell.style.height=maxH+'px'; });
+    }
+  }
+}
 
 /* ── INIT ── */
 loadTable();

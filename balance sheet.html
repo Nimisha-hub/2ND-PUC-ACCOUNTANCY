@@ -247,7 +247,9 @@ function addBodyRow(tbody, data){
     var tds=tr.querySelectorAll('td');
     data.heights.forEach(function(h,i){ if(tds[i]&&h) tds[i].style.height=h; });
   }
-  tr.querySelectorAll('textarea').forEach(function(ta){ ta.addEventListener('input', saveTable); });
+  // tr.querySelectorAll('textarea').forEach(function(ta){ ta.addEventListener('input', saveTable); });
+
+  tr.querySelectorAll('textarea').forEach(function(ta){ ta.addEventListener('input', function(){ autoResizeTextarea(ta); saveTable(); }); });
 }
 
 function addRow(){ addBodyRow(document.getElementById('tableBody'), null); setupDropZones(); setupResize(); resizeCanvas(); saveTable(); }
@@ -288,12 +290,19 @@ function placeCardInCell(cell){
   var amount=card.dataset.amount;
   if(idx===0||idx===2){
     var ta=allCells[idx].querySelector('textarea');
-    if(ta) ta.value=particulars;
+  //   if(ta) ta.value=particulars;
+  //   var amtTa=allCells[idx+1]&&allCells[idx+1].querySelector('textarea');
+  //   if(amtTa) amtTa.value=amount;
+  // } else {
+  //   var ta=cell.querySelector('textarea');
+  //   if(ta) ta.value=amount;
+  // }
+  if(ta){ ta.value=particulars; autoResizeTextarea(ta); }
     var amtTa=allCells[idx+1]&&allCells[idx+1].querySelector('textarea');
-    if(amtTa) amtTa.value=amount;
+    if(amtTa){ amtTa.value=amount; autoResizeTextarea(amtTa); }
   } else {
     var ta=cell.querySelector('textarea');
-    if(ta) ta.value=amount;
+    if(ta){ ta.value=amount; autoResizeTextarea(ta); }
   }
   card.remove(); cancelSelection(); saveTable(); showToast('Entry placed ✓');
 }
@@ -312,8 +321,11 @@ function setupDropZones(){
       var allCells=Array.from(cell.parentElement.querySelectorAll('td'));
       var idx=allCells.indexOf(cell);
       var particulars=card.dataset.particulars; var amount=card.dataset.amount;
-      if(idx===0||idx===2){ var ta=allCells[idx].querySelector('textarea'); if(ta) ta.value=particulars; var amtTa=allCells[idx+1]&&allCells[idx+1].querySelector('textarea'); if(amtTa) amtTa.value=amount; }
-      else { var ta=cell.querySelector('textarea'); if(ta) ta.value=amount; }
+      // if(idx===0||idx===2){ var ta=allCells[idx].querySelector('textarea'); if(ta) ta.value=particulars; var amtTa=allCells[idx+1]&&allCells[idx+1].querySelector('textarea'); if(amtTa) amtTa.value=amount; }
+      // else { var ta=cell.querySelector('textarea'); if(ta) ta.value=amount; }
+
+      if(idx===0||idx===2){ var ta=allCells[idx].querySelector('textarea'); if(ta){ ta.value=particulars; autoResizeTextarea(ta); } var amtTa=allCells[idx+1]&&allCells[idx+1].querySelector('textarea'); if(amtTa){ amtTa.value=amount; autoResizeTextarea(amtTa); } }
+      else { var ta=cell.querySelector('textarea'); if(ta){ ta.value=amount; autoResizeTextarea(ta); } }
       card.remove(); saveTable(); showToast('Entry placed ✓');
     });
   });
@@ -543,7 +555,20 @@ function renderCard(particulars, amount, cardType, lines){
 }
 
 document.getElementById('entryInput').addEventListener('keypress',function(e){ if(e.key==='Enter') generateCard(); });
-
+function autoResizeTextarea(ta){
+  ta.style.height='auto';
+  ta.style.height=ta.scrollHeight+'px';
+  var td=ta.closest('td');
+  if(td){
+    td.style.height=ta.scrollHeight+'px';
+    var tr=td.parentElement;
+    if(tr){
+      var maxH=0;
+      tr.querySelectorAll('td').forEach(function(cell){ if(cell.offsetHeight>maxH) maxH=cell.offsetHeight; });
+      tr.querySelectorAll('td').forEach(function(cell){ cell.style.height=maxH+'px'; });
+    }
+  }
+}
 loadTable();
 loadCards();
 </script>
