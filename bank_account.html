@@ -17,6 +17,9 @@ body{ background:#f4f6fb; padding:18px; min-height:100vh; overflow-x:hidden; }
 .tool-active{ background:#4d6fff !important; }
 .title{ text-align:center; font-size:40px; font-weight:700; margin-bottom:14px; outline:none; }
 
+.dr-cr-strip{ display:flex; justify-content:space-between; padding:0 6px; margin-bottom:4px; }
+.dr-cr-strip span{ font-size:16px; font-weight:700; color:#111; }
+
 .table-wrapper{ position:relative; overflow:auto; border-radius:4px; }
 #drawLayer{ position:absolute; top:0; left:0; z-index:2; pointer-events:none; }
 .cap-table{ border-collapse:collapse; table-layout:fixed; background:white; border:2px solid #333; width:100%; }
@@ -115,14 +118,15 @@ body{ background:#f4f6fb; padding:18px; min-height:100vh; overflow-x:hidden; }
       <button onclick="confirmClearTable()">&#129529; Clear Table</button>
     </div>
     <div class="title" id="bsDate" contenteditable="true">Bank A/c</div>
+    <div class="dr-cr-strip"><span>Dr.</span><span>Cr.</span></div>
     <div class="table-wrapper" id="tableWrapper">
       <canvas id="drawLayer"></canvas>
       <table class="cap-table" id="capTable">
         <thead>
           <tr id="headerRow">
-            <th style="width:200px;">Dr. Particulars<div class="resize-handle"></div></th>
+            <th style="width:200px;">Particulars<div class="resize-handle"></div></th>
 <th class="amt-th mid-divider">Amount (Rs.)<div class="resize-handle"></div></th>
-<th style="width:200px;">Cr. Particulars<div class="resize-handle"></div></th>
+<th style="width:200px;">Particulars<div class="resize-handle"></div></th>
 <th class="amt-th">Amount (Rs.)<div class="resize-handle"></div></th>
           </tr>
         </thead>
