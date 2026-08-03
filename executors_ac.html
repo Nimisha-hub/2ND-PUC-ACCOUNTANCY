@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Executor's A/c</title>
+<style>
+*{ margin:0; padding:0; box-sizing:border-box; font-family:Arial,sans-serif; }
+body{ background:#f4f6fb; padding:18px; min-height:100vh; overflow-x:hidden; }
+.top-nav{ display:flex; gap:14px; margin-bottom:18px; }
+.page-btn{ padding:14px 24px; border:none; border-radius:16px; background:#111; color:white; font-size:16px; font-weight:600; cursor:pointer; box-shadow:0 4px 12px rgba(0,0,0,0.1); }
+.main-layout{ display:grid; grid-template-columns:68% 32%; gap:20px; }
+.left-panel{ background:white; padding:24px; border-radius:28px; box-shadow:0 6px 20px rgba(0,0,0,0.08); position:relative; }
+.top-buttons{ display:flex; gap:12px; margin-bottom:20px; flex-wrap:wrap; }
+.top-buttons button{ background:#111; color:white; border:none; padding:14px 20px; border-radius:16px; font-size:15px; cursor:pointer; transition:0.25s; font-weight:600; }
+.top-buttons button:hover{ transform:translateY(-3px); background:#333; }
+.tool-active{ background:#4d6fff !important; }
+.title{ text-align:center; font-size:36px; font-weight:700; margin-bottom:14px; outline:none; }
+
+.dr-cr-strip{ display:flex; justify-content:space-between; padding:0 6px; margin-bottom:4px; }
+.dr-cr-strip span{ font-size:16px; font-weight:700; color:#111; }
+
+.table-wrapper{ position:relative; overflow:auto; border-radius:4px; }
+#drawLayer{ position:absolute; top:0; left:0; z-index:2; pointer-events:none; }
+.cap-table{ border-collapse:collapse; table-layout:fixed; background:white; border:2px solid #333; width:100%; }
+.cap-table th, .cap-table td{ border:none; padding:6px 10px; position:relative; min-width:80px; }
+.cap-table thead tr th{ background:#fff; font-size:14px; font-weight:700; text-align:center; height:44px; border-bottom:2px solid #333; }
+.cap-table thead tr th:not(:last-child){ border-right:1px solid #aaa; }
+.cap-table thead tr th.mid-divider{ border-right:2px solid #333 !important; }
+.cap-table thead tr th.amt-th{ width:120px; }
+.cap-table tbody tr td{ height:46px; vertical-align:middle; }
+.cap-table tbody tr td:not(:last-child){ border-right:1px solid #aaa; }
+.cap-table tbody tr td.mid-divider{ border-right:2px solid #333 !important; }
+.cap-table textarea{ width:100%; height:100%; border:none; outline:none; font-size:14px; background:transparent; padding:4px 6px; cursor:text; resize:none; font-family:Arial,sans-serif; overflow:hidden; line-height:1.4; display:block; }
+.cap-table textarea:focus{ background:#fff8d8; border-radius:6px; }
+.total-row td{ border-top:3px double #333; border-bottom:3px double #333; font-weight:bold; font-size:14px; height:44px; vertical-align:middle; padding:0; background:#f0f4ff; }
+.total-row td:not(:last-child){ border-right:1px solid #aaa; }
+.total-row td.mid-divider{ border-right:2px solid #333 !important; }
+.total-row td.label-td{ padding:6px 10px; }
+.total-ta{ width:100%; height:100%; border:none; outline:none; font-size:14px; font-weight:bold; background:transparent; resize:none; font-family:Arial,sans-serif; cursor:text; padding:4px 6px; display:block; }
+.resize-handle{ position:absolute; right:-5px; top:0; width:10px; height:100%; cursor:col-resize; z-index:20; }
+.resize-row-handle{ position:absolute; bottom:-5px; left:0; width:100%; height:10px; cursor:row-resize; z-index:20; }
+
+.drop-cell.drag-over{ background:#e8f0ff !important; outline:2px dashed #4d6fff; outline-offset:-2px; }
+.drop-cell.card-selected-hover{ background:#e8f0ff !important; outline:2px dashed #4d6fff; outline-offset:-2px; cursor:crosshair; }
+
+.right-panel{ background:white; padding:24px; border-radius:28px; box-shadow:0 6px 20px rgba(0,0,0,0.08); display:flex; flex-direction:column; height:850px; overflow:hidden; }
+.cards-header{ display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; }
+.cards-header h2{ font-size:26px; }
+.cards-action-row{ display:flex; gap:10px; margin-bottom:14px; flex-wrap:wrap; }
+.save-cards-btn{ background:#1db56c; color:white; border:none; padding:11px 20px; border-radius:14px; font-size:14px; font-weight:700; cursor:pointer; transition:0.2s; }
+.save-cards-btn:hover{ background:#17a05f; transform:translateY(-2px); }
+.delete-cards-btn{ background:#ff4d4d; color:white; border:none; padding:11px 20px; border-radius:14px; font-size:14px; font-weight:700; cursor:pointer; transition:0.2s; }
+.delete-cards-btn:hover{ background:#e03d3d; transform:translateY(-2px); }
+.save-status{ font-size:12px; color:#888; align-self:center; }
+.card-input-area{ display:flex; gap:10px; margin-bottom:6px; }
+.card-input-area input{ flex:1; padding:12px; border-radius:16px; border:2px solid #ddd; font-size:14px; outline:none; transition:0.25s; }
+.card-input-area input:focus{ border-color:#4d6fff; box-shadow:0 0 0 4px rgba(77,111,255,0.12); }
+.card-input-area button{ background:#111; color:white; border:none; padding:12px 16px; border-radius:16px; font-size:14px; cursor:pointer; transition:0.25s; font-weight:bold; }
+.card-input-area button:hover{ background:#333; transform:translateY(-2px); }
+.input-hint{ font-size:11px; color:#888; margin-bottom:12px; padding:0 4px; line-height:1.8; }
+.input-hint b{ color:#4d6fff; }
+.cards-scroll{ flex:1; overflow-y:auto; padding-right:4px; }
+.cards-container{ display:flex; flex-wrap:wrap; gap:12px; align-content:flex-start; }
+
+/* ── CARDS ── */
+.card{ width:165px; background:white; border-radius:16px; padding:10px 10px 24px; box-shadow:0 4px 14px rgba(0,0,0,0.08); border-left:6px solid #4d6fff; position:relative; transition:transform 0.2s, box-shadow 0.2s, opacity 0.2s; cursor:pointer; user-select:none; }
+.card:hover{ transform:translateY(-4px) scale(1.02); box-shadow:0 10px 20px rgba(0,0,0,0.12); }
+.card.selected{ opacity:0.45; transform:scale(0.96); box-shadow:0 2px 8px rgba(0,0,0,0.08); cursor:default; }
+
+/* ── LEDGER-STYLE CARD TABLE ── */
+.card-ledger{ width:100%; border-collapse:collapse; font-size:12px; margin-top:4px; }
+.card-ledger td{ padding:1px 2px; vertical-align:top; }
+.card-ledger .cl-label{ color:#333; font-weight:500; width:65%; word-break:break-word; }
+.card-ledger .cl-amt{ text-align:right; color:#222; font-weight:600; white-space:nowrap; width:35%; }
+.card-ledger .cl-deduct .cl-label{ color:#c00; padding-left:8px; font-style:italic; }
+.card-ledger .cl-deduct .cl-amt{ color:#c00; }
+.card-ledger .cl-add .cl-label{ color:#1a7a00; padding-left:8px; font-style:italic; }
+.card-ledger .cl-add .cl-amt{ color:#1a7a00; }
+.card-ledger .cl-divider td{ border-top:1px solid #aaa; padding-top:2px; }
+.card-ledger .cl-total .cl-label{ font-weight:700; font-size:13px; }
+.card-ledger .cl-total .cl-amt{ font-weight:700; font-size:13px; color:#4d6fff; border-top:1px solid #4d6fff; }
+.card-ledger .cl-partner td{ padding:1px 2px 1px 8px; }
+.card-ledger .cl-partner .cl-label{ color:#555; font-size:11px; }
+.card-ledger .cl-partner .cl-amt{ color:#555; font-size:11px; }
+.card-title{ font-size:13px; font-weight:700; color:#111; margin-bottom:3px; word-break:break-word; }
+
+.card-del-btn{ position:absolute; right:7px; top:7px; background:#ffe5e5; border:none; border-radius:50%; width:20px; height:20px; font-size:12px; cursor:pointer; color:#cc0000; display:flex; align-items:center; justify-content:center; opacity:0; transition:0.2s; z-index:2; }
+.card:not(.selected):hover .card-del-btn{ opacity:1; }
+.card small{ position:absolute; right:8px; bottom:5px; color:#aaa; font-size:10px; }
+
+/* ── GHOST ── */
+#cardGhost{ position:fixed; pointer-events:none; z-index:9999; width:170px; background:white; border-radius:16px; padding:10px; box-shadow:0 16px 40px rgba(0,0,0,0.22); border-left:6px solid #4d6fff; opacity:0.92; transform:rotate(2deg) scale(1.04); display:none; }
+
+#escHint{ position:fixed; top:14px; left:50%; transform:translateX(-50%); background:#111; color:#fff; padding:8px 22px; border-radius:20px; font-size:13px; font-weight:600; z-index:9998; display:none; box-shadow:0 4px 16px rgba(0,0,0,0.2); animation: hintPop 0.25s ease; }
+@keyframes hintPop{ from{opacity:0;transform:translateX(-50%) translateY(-8px)} to{opacity:1;transform:translateX(-50%) translateY(0)} }
+
+.toast{ position:fixed; bottom:30px; left:50%; transform:translateX(-50%) translateY(20px); background:#111; color:#fff; padding:12px 28px; border-radius:16px; font-size:14px; font-weight:600; opacity:0; transition:all 0.3s; pointer-events:none; z-index:9999; }
+.toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
+
+@media(max-width:1000px){ .main-layout{ grid-template-columns:1fr; } .right-panel{ height:auto; } .title{ font-size:28px; } }
+</style>
+</head>
+<body>
+
+<div class="top-nav">
+  <button class="page-btn">Executor's A/c</button>
+  <button class="page-btn" onclick="window.location.href='index.html'">&#8592; Back</button>
+</div>
+
+<div class="main-layout">
+  <div class="left-panel">
+    <div class="top-buttons">
+      <button onclick="addRow()">+ Add Row</button>
+      <button id="typingBtn" onclick="setTool('typing')">&#9000; Typing</button>
+      <button id="pencilBtn" onclick="setTool('pencil')">&#9998; Pencil</button>
+      <button id="eraserBtn" onclick="setTool('eraser')">&#129657; Eraser</button>
+      <button onclick="confirmClearTable()">&#129529; Clear Table</button>
+    </div>
+    <div class="title" id="bsDate" contenteditable="true">Deceased Partner's Executor's A/c</div>
+    <div class="dr-cr-strip"><span>Dr.</span><span>Cr.</span></div>
+    <div class="table-wrapper" id="tableWrapper">
+      <canvas id="drawLayer"></canvas>
+      <table class="cap-table" id="capTable">
+        <thead>
+          <tr id="headerRow">
+            <th style="width:200px;">Particulars<div class="resize-handle"></div></th>
+<th class="amt-th mid-divider">Amount (Rs.)<div class="resize-handle"></div></th>
+<th style="width:200px;">Particulars<div class="resize-handle"></div></th>
+<th class="amt-th">Amount (Rs.)<div class="resize-handle"></div></th>
+          </tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+        <tfoot>
+          <tr class="total-row">
+            <td class="label-td">Total</td>
+            <td class="mid-divider"><textarea class="total-ta" id="liabTotal"></textarea></td>
+            <td class="label-td">Total</td>
+            <td><textarea class="total-ta" id="assTotal"></textarea></td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+  </div>
+
+  <div class="right-panel">
+    <div class="cards-header">
+      <h2>Entry Cards</h2>
+      <p>Generate Entries</p>
+    </div>
+    <div class="cards-action-row">
+      <button class="save-cards-btn" onclick="saveCards()">💾 Save Cards</button>
+      <button class="delete-cards-btn" onclick="confirmDeleteAllCards()">🗑️ Delete All Cards</button>
+      <span class="save-status" id="saveStatus"></span>
+    </div>
+    <div class="card-input-area">
+      <input id="entryInput" placeholder="E.g. To Cash 5,000"/>
+      <button onclick="generateCard()">Generate</button>
+    </div>
+    <div class="input-hint">
+      💡 Examples:<br>
+      <b>To Profit & Loss a/c (Loss from Balance sheet) 5,000</b><br>
+      <b>To Revaluation a/c (Loss) 3,000</b><br>
+      <b>By Deceased partner's Capital a/c 40,000</b><br>
+      <b>By Reserve a/c 6,000</b><br>
+      <b>By Profit & Loss a/c (Profit from Balance sheet) 8,000</b><br>
+      <b>By Revaluation a/c (Profit) 4,000</b><br>
+      <b>By Continuing partners' Capital a/c (Individually) (with share of goodwill in gain ratio) 12,000</b><br>
+      <b>By Deceased partner's Salary 2,000</b><br>
+      <b>By Deceased partner's Commission 1,500</b>
+    </div>
+    <div class="cards-scroll">
+      <div class="cards-container" id="cardsContainer"></div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+<div id="cardGhost"></div>
+<div id="escHint">✕ Press Esc or click card again to cancel</div>
+
+<script>
+var SK_TABLE  = 'executor_table_data';
+var SK_TOTALS = 'executor_totals';
+var SK_CARDS  = 'executor_cards_data';
+var SK_TITLE  = 'executor_title';
+var cardCount = 0;
+var selectedCard = null;
+
+/* Particulars extracted from the uploaded ledger image (Deceased Partner's a/c format) */
+var DEFAULT_ROWS = [
+  ["To Profit & Loss a/c\n(Loss from Balance sheet)", "By Deceased partner's Capital a/c"],
+  ["To Revaluation a/c (Loss)", "By Reserve a/c"],
+  ["", "By Profit & Loss a/c\n(Profit from Balance sheet)"],
+  ["", "By Revaluation a/c (Profit)"],
+  ["", "By Continuing partners' Capital a/c\n(Individually)\n(with share of goodwill in gain ratio)"],
+  ["", "By Deceased partner's Salary"],
+  ["", "By Deceased partner's Commission"]
+];
+
+function showToast(msg){
+  var t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  setTimeout(function(){ t.classList.remove('show'); },2200);
+}
+
+function stripCommas(s){ return String(s).replace(/,/g,'').replace(/[()]/g,''); }
+
+function formatIndian(num){
+  if(num===''||num===null||isNaN(Number(num))) return String(num);
+  var n=Math.round(Number(num)*100)/100;
+  var str=n.toString(), parts=str.split('.');
+  var intPart=parts[0], decPart=parts[1]?'.'+parts[1]:'';
+  if(intPart.length<=3) return intPart+decPart;
+  var last3=intPart.slice(-3), rest=intPart.slice(0,-3);
+  rest=rest.replace(/\B(?=(\d{2})+(?!\d))/g,',');
+  return rest+','+last3+decPart;
+}
+
+function escHtml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+/* ── TITLE SAVE / LOAD ── */
+function saveTitle(){
+  localStorage.setItem(SK_TITLE, document.getElementById('bsDate').innerText);
+}
+function loadTitle(){
+  var raw=localStorage.getItem(SK_TITLE);
+  if(raw) document.getElementById('bsDate').innerText=raw;
+}
+
+/* ── SAVE TABLE ── */
+function saveTable(){
+  var rows=[];
+  document.querySelectorAll('#tableBody tr').forEach(function(tr){
+    var cells=[]; tr.querySelectorAll('textarea').forEach(function(ta){ cells.push(ta.value); });
+    var heights=[]; tr.querySelectorAll('td').forEach(function(td){ heights.push(td.style.height||''); });
+    rows.push({cells:cells, heights:heights});
+  });
+  localStorage.setItem(SK_TABLE, JSON.stringify(rows));
+  localStorage.setItem(SK_TOTALS, JSON.stringify({liab:document.getElementById('liabTotal').value, ass:document.getElementById('assTotal').value}));
+}
+
+function loadTable(){
+  var raw=localStorage.getItem(SK_TABLE);
+  var tbody=document.getElementById('tableBody');
+  tbody.innerHTML='';
+  if(raw){
+    JSON.parse(raw).forEach(function(rowData){ addBodyRow(tbody, rowData); });
+  } else {
+    DEFAULT_ROWS.forEach(function(pair){
+      addBodyRow(tbody, {cells:[pair[0], '', pair[1], ''], heights:[]});
+    });
+  }
+  var totRaw=localStorage.getItem(SK_TOTALS);
+  if(totRaw){ var t=JSON.parse(totRaw); document.getElementById('liabTotal').value=t.liab||''; document.getElementById('assTotal').value=t.ass||''; }
+  document.getElementById('liabTotal').addEventListener('input', saveTable);
+  document.getElementById('assTotal').addEventListener('input', saveTable);
+  setupDropZones(); setupResize(); resizeCanvas();
+  document.querySelectorAll('#tableBody textarea').forEach(function(ta){ autoResizeTextarea(ta); });
+}
+
+function makeCell(isMid){
+  var td=document.createElement('td');
+  td.className='drop-cell';
+  if(isMid) td.classList.add('mid-divider');
+  td.innerHTML="<textarea rows='1'></textarea><div class='resize-row-handle'></div>";
+  return td;
+}
+
+function addBodyRow(tbody, data){
+  var tr=document.createElement('tr');
+  tr.appendChild(makeCell(false)); tr.appendChild(makeCell(true));
+  tr.appendChild(makeCell(false)); tr.appendChild(makeCell(false));
+  tbody.appendChild(tr);
+  if(data){
+    var tas=tr.querySelectorAll('textarea');
+    data.cells.forEach(function(v,i){ if(tas[i]) tas[i].value=v; });
+    var tds=tr.querySelectorAll('td');
+    data.heights.forEach(function(h,i){ if(tds[i]&&h) tds[i].style.height=h; });
+  }
+  tr.querySelectorAll('textarea').forEach(function(ta){ ta.addEventListener('input', function(){ autoResizeTextarea(ta); saveTable(); }); });
+}
+
+function addRow(){ addBodyRow(document.getElementById('tableBody'), null); setupDropZones(); setupResize(); resizeCanvas(); saveTable(); }
+
+function confirmClearTable(){
+  if(!confirm('Clear the table? Cards will NOT be deleted.')) return;
+  document.querySelectorAll('.cap-table textarea').forEach(function(t){ t.value=''; });
+  var tbody=document.getElementById('tableBody');
+  while(tbody.rows.length>DEFAULT_ROWS.length) tbody.deleteRow(tbody.rows.length-1);
+  saveTable(); showToast('Table cleared!');
+}
+
+function highlightDropCells(){ document.querySelectorAll('.drop-cell').forEach(function(c){ c.classList.add('card-selected-hover'); }); }
+function unhighlightDropCells(){ document.querySelectorAll('.drop-cell').forEach(function(c){ c.classList.remove('card-selected-hover'); }); }
+
+function selectCard(card){
+  if(selectedCard===card){ cancelSelection(); return; }
+  if(selectedCard) cancelSelection(true);
+  selectedCard=card; card.classList.add('selected');
+  var ghost=document.getElementById('cardGhost');
+  ghost.innerHTML=card.innerHTML; ghost.style.display='block';
+  highlightDropCells(); document.getElementById('escHint').style.display='block';
+}
+
+function cancelSelection(silent){
+  if(selectedCard){ selectedCard.classList.remove('selected'); selectedCard=null; }
+  document.getElementById('cardGhost').style.display='none';
+  unhighlightDropCells();
+  if(!silent) document.getElementById('escHint').style.display='none';
+}
+
+function placeCardInCell(cell){
+  if(!selectedCard) return;
+  var card=selectedCard;
+  var allCells=Array.from(cell.parentElement.querySelectorAll('td'));
+  var idx=allCells.indexOf(cell);
+  var particulars=card.dataset.particulars;
+  var amount=card.dataset.amount;
+  if(idx===0||idx===2){
+    var ta=allCells[idx].querySelector('textarea');
+    if(ta){ ta.value=particulars; autoResizeTextarea(ta); }
+    var amtTa=allCells[idx+1]&&allCells[idx+1].querySelector('textarea');
+    if(amtTa){ amtTa.value=amount; autoResizeTextarea(amtTa); }
+  } else {
+    var ta=cell.querySelector('textarea');
+    if(ta){ ta.value=amount; autoResizeTextarea(ta); }
+  }
+  card.remove(); cancelSelection(); saveTable(); showToast('Entry placed ✓');
+}
+
+function setupDropZones(){
+  document.querySelectorAll('.drop-cell').forEach(function(cell){
+    if(cell._dropSetup) return; cell._dropSetup=true;
+    cell.addEventListener('click', function(e){ if(selectedCard){ e.stopPropagation(); placeCardInCell(cell); } });
+    cell.addEventListener('dragover',function(e){ e.preventDefault(); Array.from(cell.parentElement.querySelectorAll('td')).forEach(function(td){ td.classList.add('drag-over'); }); });
+    cell.addEventListener('dragleave',function(e){ if(!cell.parentElement.contains(e.relatedTarget)){ Array.from(cell.parentElement.querySelectorAll('td')).forEach(function(td){ td.classList.remove('drag-over'); }); } });
+    cell.addEventListener('drop',function(e){
+      e.preventDefault();
+      Array.from(cell.parentElement.querySelectorAll('td')).forEach(function(td){ td.classList.remove('drag-over'); });
+      var card=document.getElementById(e.dataTransfer.getData('text/plain'));
+      if(!card) return;
+      var allCells=Array.from(cell.parentElement.querySelectorAll('td'));
+      var idx=allCells.indexOf(cell);
+      var particulars=card.dataset.particulars; var amount=card.dataset.amount;
+      if(idx===0||idx===2){ var ta=allCells[idx].querySelector('textarea'); if(ta){ ta.value=particulars; autoResizeTextarea(ta); } var amtTa=allCells[idx+1]&&allCells[idx+1].querySelector('textarea'); if(amtTa){ amtTa.value=amount; autoResizeTextarea(amtTa); } }
+      else { var ta=cell.querySelector('textarea'); if(ta){ ta.value=amount; autoResizeTextarea(ta); } }
+      card.remove(); saveTable(); showToast('Entry placed ✓');
+    });
+  });
+}
+
+function setupResize(){
+  document.querySelectorAll('.resize-handle').forEach(function(handle){
+    if(handle._rSetup) return; handle._rSetup=true;
+    handle.onmousedown=function(e){
+      e.preventDefault(); e.stopPropagation();
+      var th=handle.parentElement, startX=e.pageX, startW=th.offsetWidth;
+      function onMove(e){ var w=Math.max(60,startW+(e.pageX-startX)); th.style.width=w+'px'; th.style.minWidth=w+'px'; resizeCanvas(); }
+      function onUp(){ document.removeEventListener('mousemove',onMove); document.removeEventListener('mouseup',onUp); saveTable(); }
+      document.addEventListener('mousemove',onMove); document.addEventListener('mouseup',onUp);
+    };
+  });
+  document.querySelectorAll('.resize-row-handle').forEach(function(handle){
+    if(handle._rrSetup) return; handle._rrSetup=true;
+    handle.onmousedown=function(e){
+      e.preventDefault(); e.stopPropagation();
+      var tr=handle.parentElement.parentElement, tds=tr.querySelectorAll('td'), startY=e.pageY, startH=tr.getBoundingClientRect().height;
+      function onMove(e){ var h=Math.max(36,startH+(e.pageY-startY)); tds.forEach(function(td){ td.style.height=h+'px'; }); }
+      function onUp(){ document.removeEventListener('mousemove',onMove); document.removeEventListener('mouseup',onUp); resizeCanvas(); saveTable(); }
+      document.addEventListener('mousemove',onMove); document.addEventListener('mouseup',onUp);
+    };
+  });
+}
+
+var canvas=document.getElementById('drawLayer');
+var wrapper=document.getElementById('tableWrapper');
+var ctx=canvas.getContext('2d');
+function resizeCanvas(){
+  var imgData=null;
+  if(canvas.width>0&&canvas.height>0){ try{ imgData=ctx.getImageData(0,0,canvas.width,canvas.height); }catch(e){} }
+  canvas.width=wrapper.scrollWidth; canvas.height=wrapper.scrollHeight;
+  if(imgData) try{ ctx.putImageData(imgData,0,0); }catch(e){}
+}
+resizeCanvas(); window.addEventListener('resize',resizeCanvas);
+
+var drawing=false, tool='typing';
+function setTool(t){
+  tool=t;
+  ['typingBtn','pencilBtn','eraserBtn'].forEach(function(id){ document.getElementById(id).classList.remove('tool-active'); });
+  if(t==='typing'){ canvas.style.pointerEvents='none'; canvas.style.zIndex='0'; document.getElementById('typingBtn').classList.add('tool-active'); }
+  else if(t==='pencil'){ canvas.style.pointerEvents='auto'; canvas.style.zIndex='99'; canvas.style.cursor='crosshair'; document.getElementById('pencilBtn').classList.add('tool-active'); }
+  else { canvas.style.pointerEvents='auto'; canvas.style.zIndex='99'; canvas.style.cursor='cell'; document.getElementById('eraserBtn').classList.add('tool-active'); }
+}
+setTool('typing');
+
+function getBelow(e){ canvas.style.pointerEvents='none'; var el=document.elementFromPoint(e.clientX,e.clientY); canvas.style.pointerEvents=tool==='typing'?'none':'auto'; return el; }
+canvas.addEventListener('dragover',function(e){ e.preventDefault(); var el=getBelow(e); if(el) el.dispatchEvent(new DragEvent('dragover',{bubbles:true,cancelable:true,dataTransfer:e.dataTransfer})); });
+canvas.addEventListener('drop',function(e){ e.preventDefault(); var el=getBelow(e); if(el) el.dispatchEvent(new DragEvent('drop',{bubbles:true,cancelable:true,dataTransfer:e.dataTransfer})); });
+canvas.addEventListener('mousedown',function(e){ if(tool==='typing') return; drawing=true; ctx.beginPath(); ctx.moveTo(e.offsetX,e.offsetY); });
+window.addEventListener('mousemove',function(e){
+  if(!drawing) return;
+  var r=canvas.getBoundingClientRect();
+  ctx.lineCap='round'; ctx.lineJoin='round';
+  if(tool==='eraser'){ ctx.globalCompositeOperation='destination-out'; ctx.lineWidth=30; }
+  else { ctx.globalCompositeOperation='source-over'; ctx.strokeStyle='#111'; ctx.lineWidth=2.5; }
+  ctx.lineTo(e.clientX-r.left,e.clientY-r.top); ctx.stroke();
+});
+window.addEventListener('mouseup',function(){ if(!drawing) return; drawing=false; ctx.beginPath(); });
+
+document.addEventListener('mousemove', function(e){
+  var ghost=document.getElementById('cardGhost');
+  if(ghost.style.display==='none') return;
+  ghost.style.left=(e.clientX+16)+'px'; ghost.style.top=(e.clientY-24)+'px';
+});
+document.addEventListener('keydown', function(e){ if(e.key==='Escape') cancelSelection(); });
+document.addEventListener('click', function(e){
+  if(!selectedCard) return;
+  var inPanel=e.target.closest('.right-panel'); var inCell=e.target.closest('.drop-cell');
+  if(!inPanel && !inCell) cancelSelection();
+});
+
+/* ── CARDS SAVE / LOAD ── */
+function saveCards(){
+  var cards=[];
+  document.querySelectorAll('#cardsContainer .card').forEach(function(card){
+    cards.push({ particulars:card.dataset.particulars, amount:card.dataset.amount, cardType:card.dataset.cardType||'simple', lines:card.dataset.lines||'[]' });
+  });
+  localStorage.setItem(SK_CARDS, JSON.stringify(cards));
+  var now=new Date();
+  document.getElementById('saveStatus').textContent='Saved at '+now.getHours()+':'+String(now.getMinutes()).padStart(2,'0');
+  showToast('Cards saved! ✅');
+}
+
+function loadCards(){
+  var raw=localStorage.getItem(SK_CARDS);
+  if(!raw) return;
+  JSON.parse(raw).forEach(function(c){
+    var lines=[];
+    try{ lines=JSON.parse(c.lines||'[]'); }catch(e){}
+    renderCard(c.particulars, c.amount, c.cardType||'simple', lines);
+  });
+}
+
+function confirmDeleteAllCards(){
+  if(!confirm('Delete ALL saved cards? This cannot be undone.')) return;
+  document.getElementById('cardsContainer').innerHTML='';
+  localStorage.removeItem(SK_CARDS);
+  document.getElementById('saveStatus').textContent='';
+  showToast('All cards deleted!');
+}
+
+/* ═══════════════════════════════════════════
+   GENERATE CARD — parses input text
+   ═══════════════════════════════════════════ */
+function generateCard(){
+  var input=document.getElementById('entryInput');
+  if(!input.value.trim()) return;
+  var text=input.value.trim();
+
+  /* ── 1. Grouped entries: "Cheques A 6,800 B 5,200 C 3,000" ── */
+  var groupMatch=text.match(/^([A-Za-z\s]+?)\s+((?:[A-Za-z][A-Za-z\s']*?\s+[\d,]+\s*)+)$/);
+  if(groupMatch){
+    var groupLabel=groupMatch[1].trim();
+    var rest=groupMatch[2].trim();
+    var partnerRe=/([A-Za-z][A-Za-z\s']*?)\s+([\d,]+)(?=\s+[A-Za-z]|$)/g;
+    var partners=[], total=0, pm;
+    while((pm=partnerRe.exec(rest))!==null){
+      var pAmt=Number(stripCommas(pm[2]));
+      total+=pAmt;
+      partners.push({name:pm[1].trim(), amount:formatIndian(pAmt)});
+    }
+    if(partners.length>1){
+      var lines=[{type:'title', label:groupLabel}];
+      partners.forEach(function(p){ lines.push({type:'partner', label:p.name, amount:'₹'+p.amount}); });
+      lines.push({type:'total', label:'Total', amount:'₹'+formatIndian(total)});
+      renderCard(groupLabel, formatIndian(total), 'grouped', lines);
+      input.value=''; return;
+    }
+  }
+
+  /* ── 2. Multiple Less/Add lines: "By Drawings 23,000 Less: Refund 2,000 = 21,000" ── */
+  var adjMatch=text.match(/^(.+?)\s+([\d,]+)\s+((?:Less|Add)[^=]+?)\s+([\d,]+)\s*=\s*([\d,]+)$/i);
+  if(adjMatch){
+    var mainLabel=adjMatch[1].trim();
+    var baseAmt=Number(stripCommas(adjMatch[2]));
+    var adjVerb=adjMatch[3].trim();
+    var adjAmt=Number(stripCommas(adjMatch[4]));
+    var finalAmt=Number(stripCommas(adjMatch[5]));
+    var isDeduct=/^less/i.test(adjVerb);
+    var lines=[
+      {type:'main',    label:mainLabel,  amount:'₹'+formatIndian(baseAmt)},
+      {type: isDeduct?'deduct':'add', label:adjVerb, amount:(isDeduct?'(₹':'₹')+formatIndian(adjAmt)+(isDeduct?')':'')},
+      {type:'total',   label:'Net',      amount:'₹'+formatIndian(finalAmt)}
+    ];
+    renderCard(mainLabel, formatIndian(finalAmt), 'adjusted', lines);
+    input.value=''; return;
+  }
+
+  /* ── 3. Simple: "To Balance b/d 5,000" / "By Salaries 23,000" ── */
+  var simpleMatch=text.match(/^(.+?)\s+([\d,]+)\s*$/);
+  if(simpleMatch){
+    var label=simpleMatch[1].trim();
+    var amt=formatIndian(Number(stripCommas(simpleMatch[2])));
+    var lines=[{type:'main', label:label, amount:'₹'+amt}];
+    renderCard(label, amt, 'simple', lines);
+    input.value=''; return;
+  }
+
+  /* ── 4. Fallback ── */
+  var amtM=text.match(/([\d,]+)\s*$/);
+  var amt=amtM?formatIndian(Number(stripCommas(amtM[1]))):'';
+  var part=text.replace(/([\d,]+)\s*$/,'').trim();
+  var lines=[{type:'main', label:part, amount:'₹'+amt}];
+  renderCard(part, amt, 'simple', lines);
+  input.value='';
+}
+
+/* ═══════════════════════════════════════════
+   RENDER CARD — builds ledger-style display
+   ═══════════════════════════════════════════ */
+function renderCard(particulars, amount, cardType, lines){
+  var card=document.createElement('div');
+  cardCount++;
+  card.id='card'+cardCount;
+  card.draggable=true;
+  card.className='card';
+  card.dataset.cardType=cardType;
+  card.dataset.lines=JSON.stringify(lines);
+  card.dataset.amount=amount;
+
+  var cellText=particulars;
+  if(cardType==='adjusted'||cardType==='grouped'){
+    lines.forEach(function(l){
+      if(l.type!=='title') cellText+='\n'+l.label+(l.amount?' '+l.amount:'');
+    });
+  }
+  card.dataset.particulars=cellText;
+
+  var html='<button class="card-del-btn" title="Delete">✕</button>';
+
+  html+='<table class="card-ledger">';
+  lines.forEach(function(l, i){
+    if(l.type==='title'){
+      html+='<tr><td colspan="2" class="cl-label" style="font-weight:700;font-size:13px;padding-bottom:4px;">'+escHtml(l.label)+'</td></tr>';
+    } else if(l.type==='main'){
+      html+='<tr><td class="cl-label">'+escHtml(l.label)+'</td><td class="cl-amt">'+escHtml(l.amount)+'</td></tr>';
+    } else if(l.type==='deduct'){
+      html+='<tr class="cl-deduct"><td class="cl-label">'+escHtml(l.label)+'</td><td class="cl-amt">'+escHtml(l.amount)+'</td></tr>';
+    } else if(l.type==='add'){
+      html+='<tr class="cl-add"><td class="cl-label">'+escHtml(l.label)+'</td><td class="cl-amt">'+escHtml(l.amount)+'</td></tr>';
+    } else if(l.type==='partner'){
+      html+='<tr class="cl-partner"><td class="cl-label">'+escHtml(l.label)+'</td><td class="cl-amt">'+escHtml(l.amount)+'</td></tr>';
+    } else if(l.type==='total'){
+      html+='<tr class="cl-total"><td class="cl-label">'+escHtml(l.label)+'</td><td class="cl-amt">'+escHtml(l.amount)+'</td></tr>';
+    }
+  });
+  html+='</table>';
+  html+='<small>Click to place</small>';
+  card.innerHTML=html;
+
+  card.addEventListener('click', function(e){ if(e.target.classList.contains('card-del-btn')) return; selectCard(card); });
+  card.addEventListener('dragstart',function(e){ e.dataTransfer.setData('text/plain',card.id); setTimeout(function(){ card.classList.add('selected'); highlightDropCells(); },0); });
+  card.addEventListener('dragend',function(){ card.classList.remove('selected'); unhighlightDropCells(); });
+  card.querySelector('.card-del-btn').addEventListener('click',function(e){ e.stopPropagation(); if(card===selectedCard) cancelSelection(); if(confirm('Delete this card?')){ card.remove(); } });
+
+  document.getElementById('cardsContainer').appendChild(card);
+}
+
+document.getElementById('entryInput').addEventListener('keypress',function(e){ if(e.key==='Enter') generateCard(); });
+document.getElementById('bsDate').addEventListener('input', saveTitle);
+function autoResizeTextarea(ta){
+  ta.style.height='auto';
+  ta.style.height=ta.scrollHeight+'px';
+  var td=ta.closest('td');
+  if(td){
+    td.style.height=ta.scrollHeight+'px';
+    var tr=td.parentElement;
+    if(tr){
+      var maxH=0;
+      tr.querySelectorAll('td').forEach(function(cell){ if(cell.offsetHeight>maxH) maxH=cell.offsetHeight; });
+      tr.querySelectorAll('td').forEach(function(cell){ cell.style.height=maxH+'px'; });
+    }
+  }
+}
+loadTitle();
+loadTable();
+loadCards();
+</script>
+</body>
+</html>
