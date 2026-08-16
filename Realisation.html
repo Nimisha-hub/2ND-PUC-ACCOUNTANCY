@@ -1,0 +1,826 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Realisation A/c</title>
+<style>
+*{ margin:0; padding:0; box-sizing:border-box; font-family:Arial,sans-serif; }
+body{ background:#f4f6fb; padding:18px; min-height:100vh; overflow-x:hidden; }
+.top-nav{ display:flex; gap:14px; margin-bottom:18px; }
+.page-btn{ padding:14px 24px; border:none; border-radius:16px; background:#111; color:white; font-size:16px; font-weight:600; cursor:pointer; box-shadow:0 4px 12px rgba(0,0,0,0.1); }
+.main-layout{ display:grid; grid-template-columns:58% 42%; gap:20px; min-width:700px; }
+.left-panel{ background:white; padding:24px; border-radius:28px; box-shadow:0 6px 20px rgba(0,0,0,0.08); position:relative; }
+.top-buttons{ display:flex; gap:12px; margin-bottom:20px; flex-wrap:wrap; }
+.top-buttons button{ background:#111; color:white; border:none; padding:14px 20px; border-radius:16px; font-size:15px; cursor:pointer; transition:0.25s; font-weight:600; }
+.top-buttons button:hover{ transform:translateY(-3px); background:#333; }
+.tool-active{ background:#4d6fff !important; }
+.title{ text-align:center; font-size:44px; font-weight:700; margin-bottom:14px; }
+.dr-cr-bar{ display:flex; justify-content:space-between; padding:2px 4px 4px 4px; }
+.dr-label, .cr-label{ font-size:16px; font-weight:700; }
+.table-wrapper{ position:relative; overflow:auto; border-radius:4px; }
+#drawLayer{ position:absolute; top:0; left:0; z-index:2; pointer-events:none; }
+.reval-table{ width:100%; border-collapse:collapse; table-layout:fixed; background:white; border:2px solid #333; }
+.reval-table th, .reval-table td{ border:none; padding:6px 10px; position:relative; min-width:80px; isolation:auto; }
+.header-row th{ background:#fff; font-size:15px; font-weight:700; text-align:center; height:48px; border-bottom:2px solid #333; border-top:2px solid #333; }
+.header-row th:nth-child(1), .header-row th:nth-child(2), .header-row th:nth-child(3),
+.reval-table tbody tr td:nth-child(1), .reval-table tbody tr td:nth-child(2), .reval-table tbody tr td:nth-child(3),
+.total-row td:nth-child(1), .total-row td:nth-child(2), .total-row td:nth-child(3){ border-right:2px solid #333; }
+.reval-table tbody tr td{ height:46px; vertical-align:middle; }
+.drop-cell.drag-over{ background:#e8f0ff !important; outline:2px dashed #4d6fff; outline-offset:-2px; }
+.reval-table textarea{ width:100%; height:100%; border:none; outline:none; font-size:15px; background:transparent; padding:4px 6px; cursor:text; resize:none; font-family:Arial,sans-serif; overflow:hidden; line-height:1.4; display:block; }
+.reval-table textarea:focus{ background:#fff8d8; border-radius:6px; }
+.total-row td{ border-top:2px solid #333; font-weight:bold; font-size:15px; height:44px; vertical-align:middle; padding:6px 10px; }
+.total-ta{ width:100%; height:100%; border:none; outline:none; font-size:15px; font-weight:bold; background:transparent; resize:none; font-family:Arial,sans-serif; cursor:text; padding:0; }
+.col-particular{ width:30%; }
+.col-amount{ width:20%; text-align:right; }
+.resize-handle{ position:absolute; right:-5px; top:0; width:10px; height:100%; cursor:col-resize; z-index:20; }
+.resize-row{ position:absolute; bottom:-5px; left:0; width:100%; height:10px; cursor:row-resize; z-index:20; }
+.right-panel{ background:white; padding:24px; border-radius:28px; box-shadow:0 6px 20px rgba(0,0,0,0.08); display:flex; flex-direction:column; height:850px; overflow:hidden; }
+.cards-header{ display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; }
+.cards-header h2{ font-size:28px; }
+.cards-action-row{ display:flex; gap:10px; margin-bottom:14px; }
+.save-cards-btn{ background:#1db56c; color:white; border:none; padding:11px 20px; border-radius:14px; font-size:14px; font-weight:700; cursor:pointer; transition:0.2s; display:flex; align-items:center; gap:7px; }
+.save-cards-btn:hover{ background:#17a05f; transform:translateY(-2px); }
+.delete-cards-btn{ background:#ff4d4d; color:white; border:none; padding:11px 20px; border-radius:14px; font-size:14px; font-weight:700; cursor:pointer; transition:0.2s; display:flex; align-items:center; gap:7px; }
+.delete-cards-btn:hover{ background:#e03d3d; transform:translateY(-2px); }
+.save-status{ font-size:12px; color:#888; align-self:center; margin-left:4px; }
+.card-input-area{ display:flex; gap:12px; margin-bottom:18px; }
+.card-input-area input{ flex:1; padding:14px; border-radius:18px; border:2px solid #ddd; font-size:15px; outline:none; transition:0.25s; }
+.card-input-area input:focus{ border-color:#4d6fff; box-shadow:0 0 0 4px rgba(77,111,255,0.12); }
+.card-input-area button{ background:#111; color:white; border:none; padding:14px 20px; border-radius:18px; font-size:15px; cursor:pointer; transition:0.25s; font-weight:bold; }
+.card-input-area button:hover{ background:#333; transform:translateY(-2px); }
+/* .cards-scroll{ flex:1; overflow-y:auto; padding-right:5px; } */
+.input-hint{ font-size:11px; color:#888; margin-bottom:12px; padding:0 4px; line-height:1.6; }
+.input-hint b{ color:#4d6fff; }
+.cards-scroll{ flex:1; overflow-y:auto; padding-right:5px; }
+.cards-container{ display:flex; flex-wrap:wrap; gap:14px; align-content:flex-start; }
+.card{ width:175px; min-height:90px; background:white; border-radius:18px; padding:12px; box-shadow:0 4px 14px rgba(0,0,0,0.08); border-left:6px solid #4d6fff; position:relative; transition:transform 0.2s, box-shadow 0.2s, opacity 0.2s; cursor:pointer; user-select:none; }
+.card.cr{ border-left:6px solid #1db56c; }
+.card:hover{ transform:translateY(-4px) scale(1.02); box-shadow:0 10px 20px rgba(0,0,0,0.13); }
+.card.selected{ opacity:0.45; transform:scale(0.96); box-shadow:0 2px 8px rgba(0,0,0,0.08); cursor:default; }
+.tag{ display:inline-block; padding:4px 10px; border-radius:20px; font-size:11px; font-weight:bold; margin-bottom:8px; background:#e7edff; color:#4d6fff; }
+.card.cr .tag{ background:#dff7ea; color:#1db56c; }
+.particular{ font-size:14px; font-weight:600; line-height:1.4; margin-bottom:6px; word-break:break-word; }
+.particular .sub-line{ display:block; font-size:12px; font-weight:500; color:#555; margin-top:2px; }
+.particular .partner-line{ display:block; font-size:12px; font-weight:500; color:#333; margin-top:3px; background:#f5f5f5; border-radius:6px; padding:2px 6px; }
+.amount{ font-size:14px; font-weight:bold; margin-bottom:16px; }
+.card-del-btn{ position:absolute; right:8px; top:8px; background:#ffe5e5; border:none; border-radius:50%; width:22px; height:22px; font-size:13px; cursor:pointer; color:#cc0000; display:flex; align-items:center; justify-content:center; opacity:0; transition:0.2s; }
+.card:not(.selected):hover .card-del-btn{ opacity:1; }
+.card small{ position:absolute; right:10px; bottom:8px; color:#aaa; font-size:11px; }
+#cardGhost{
+  position:fixed; pointer-events:none; z-index:9999;
+  width:175px; background:white; border-radius:18px; padding:12px;
+  box-shadow:0 16px 40px rgba(0,0,0,0.22); border-left:6px solid #4d6fff;
+  opacity:0.92; transform:rotate(2deg) scale(1.04);
+  transition:none; display:none;
+}
+#cardGhost.cr{ border-left:6px solid #1db56c; }
+.drop-cell.card-selected-hover{
+  background:#e8f0ff !important;
+  outline:2px dashed #4d6fff;
+  outline-offset:-2px;
+  cursor:crosshair;
+}
+#escHint{
+  position:fixed; top:14px; left:50%; transform:translateX(-50%);
+  background:#111; color:#fff; padding:8px 22px; border-radius:20px;
+  font-size:13px; font-weight:600; z-index:9998; display:none;
+  box-shadow:0 4px 16px rgba(0,0,0,0.2);
+  animation: hintPop 0.25s ease;
+}
+@keyframes hintPop{ from{opacity:0;transform:translateX(-50%) translateY(-8px)} to{opacity:1;transform:translateX(-50%) translateY(0)} }
+.toast{ position:fixed; bottom:30px; left:50%; transform:translateX(-50%) translateY(20px); background:#111; color:#fff; padding:12px 28px; border-radius:16px; font-size:14px; font-weight:600; opacity:0; transition:all 0.3s; pointer-events:none; z-index:9999; }
+.toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
+@media(max-width:600px){ .main-layout{ grid-template-columns:1fr; } .right-panel{ height:auto; } .title{ font-size:30px; } }
+</style>
+</head>
+<body>
+
+<div class="top-nav">
+  <button class="page-btn">Realisation A/c</button>
+  <button class="page-btn" onclick="window.location.href='index.html'">&#8592; Back</button>
+</div>
+
+<div class="main-layout">
+  <div class="left-panel">
+    <div class="top-buttons">
+      <button onclick="addRow()">+ Add Row</button>
+      <button onclick="calculateTotals()">Calculate</button>
+      <button id="typingBtn" onclick="setTool('typing')">&#9000; Typing</button>
+      <button id="pencilBtn" onclick="setTool('pencil')">&#9998; Pencil</button>
+      <button id="eraserBtn" onclick="setTool('eraser')">&#129657; Eraser</button>
+      <button onclick="confirmClearAll()">&#129529; Clear Table</button>
+    </div>
+    <div class="title">Realisation A/c</div>
+    <div class="dr-cr-bar">
+      <span class="dr-label">Dr.</span>
+      <span class="cr-label">Cr.</span>
+    </div>
+    <div class="table-wrapper" id="tableWrapper">
+      <canvas id="drawLayer"></canvas>
+      <table class="reval-table">
+        <tr class="header-row">
+          <th class="col-particular">Particulars</th>
+          <th class="col-amount">Amount (Rs.)</th>
+          <th class="col-particular">Particulars</th>
+          <th class="col-amount">Amount (Rs.)</th>
+        </tr>
+        <tbody id="tableBody"></tbody>
+        <tr class="total-row">
+          <td>Total</td>
+          <td><textarea class="total-ta" id="drTotal"></textarea></td>
+          <td>Total</td>
+          <td><textarea class="total-ta" id="crTotal"></textarea></td>
+        </tr>
+      </table>
+    </div>
+  </div>
+
+  <div class="right-panel">
+    <div class="cards-header">
+      <h2>Entry Cards</h2>
+      <p>Generate Entries</p>
+    </div>
+    <div class="cards-action-row">
+      <button class="save-cards-btn" onclick="saveCards()">💾 Save Cards</button>
+      <button class="delete-cards-btn" onclick="confirmDeleteAllCards()">🗑️ Delete All Cards</button>
+      <span class="save-status" id="saveStatus"></span>
+    </div>
+    <div class="card-input-area">
+      <input id="entryInput" placeholder="e.g. By Bank (Assets Realised) 45,000"/>
+      <button onclick="generateCard()">Generate</button>
+    </div>
+    <!-- <div class="cards-scroll"> -->
+       <div class="input-hint">
+      💡 <b>To Sundry Assets 80,000</b> → DR card (assets transferred) &nbsp;|&nbsp;
+      <b>By Sundry Creditors 20,000</b> → CR card (liabilities transferred) &nbsp;|&nbsp;
+      <b>By Bank (Assets Realised) 45,000</b> → CR card with bracket note &nbsp;|&nbsp;
+      <b>To Bank (Realisation Expenses) 2,000</b> → DR card with bracket note &nbsp;|&nbsp;
+      <b>To Profit Transferred to partners capital a/c </b>
+       Ragga 2/3*8000
+       Tala 1/3*8000
+      </b> → splits profit/loss to partners &nbsp;|&nbsp;
+      <b>* auto-converts to ×</b>
+    </div>
+    <div class="cards-scroll">
+      <div class="cards-container" id="cardsContainer"></div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+<div id="cardGhost"></div>
+<div id="escHint">✕ Press Esc or click card again to cancel</div>
+
+<script>
+var STORAGE_TABLE  = 'realisation_table_data';
+var STORAGE_CARDS  = 'realisation_cards_data';
+var STORAGE_TOTALS = 'realisation_totals';
+
+function showToast(msg){
+  var t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  setTimeout(function(){ t.classList.remove('show'); },2200);
+}
+
+function stripCommas(str){
+  return String(str).replace(/,/g,'');
+}
+
+function formatIndian(num){
+  if(num === '' || num === null || isNaN(Number(num))) return String(num);
+  var n = Math.round(Number(num) * 100) / 100;
+  var str = n.toString();
+  var parts = str.split('.');
+  var intPart = parts[0];
+  var decPart = parts[1] ? '.' + parts[1] : '';
+  if(intPart.length <= 3) return intPart + decPart;
+  var lastThree = intPart.slice(-3);
+  var rest = intPart.slice(0, intPart.length - 3);
+  rest = rest.replace(/\B(?=(\d{2})+(?!\d))/g, ',');
+  return rest + ',' + lastThree + decPart;
+}
+
+/* ── HELPER: replace all * with × in a string ── */
+function starToX(str){
+  return String(str).replace(/\*/g, '×');
+}
+
+function saveTable(){
+  var rows=[];
+  document.querySelectorAll('#tableBody tr').forEach(function(tr){
+    var cells=[];
+    tr.querySelectorAll('textarea').forEach(function(ta){ cells.push(ta.value); });
+    var heights=[];
+    tr.querySelectorAll('td').forEach(function(td){ heights.push(td.style.height||''); });
+    rows.push({cells:cells,heights:heights});
+  });
+  var totals={dr:document.getElementById('drTotal').value, cr:document.getElementById('crTotal').value};
+  localStorage.setItem(STORAGE_TABLE, JSON.stringify(rows));
+  localStorage.setItem(STORAGE_TOTALS, JSON.stringify(totals));
+}
+
+function autoResizeTextarea(ta) {
+  ta.style.height = 'auto';
+  ta.style.height = ta.scrollHeight + 'px';
+  var td = ta.closest('td');
+  if (td) {
+    td.style.height = ta.scrollHeight + 'px';
+    var tr = td.parentElement;
+    if (tr) {
+      var maxH = 0;
+      tr.querySelectorAll('td').forEach(function(cell) {
+        if (cell.offsetHeight > maxH) maxH = cell.offsetHeight;
+      });
+      tr.querySelectorAll('td').forEach(function(cell) {
+        cell.style.height = maxH + 'px';
+      });
+    }
+  }
+}
+
+function loadTable(){
+  var raw=localStorage.getItem(STORAGE_TABLE);
+  var totRaw=localStorage.getItem(STORAGE_TOTALS);
+  var rows=raw?JSON.parse(raw):null;
+  if(!rows||rows.length===0){
+    for(var i=0;i<5;i++) addRow(true);
+  } else {
+    rows.forEach(function(rowData){ addRow(true, rowData); });
+  }
+  if(totRaw){
+    var t=JSON.parse(totRaw);
+    document.getElementById('drTotal').value=t.dr||'';
+    document.getElementById('crTotal').value=t.cr||'';
+  }
+}
+
+var cardCount=0;
+function addRow(silent, data){
+  var row=document.createElement('tr');
+  row.innerHTML='<td class="drop-cell"><textarea rows="1"></textarea><div class="resize-handle"></div><div class="resize-row"></div></td><td class="drop-cell"><textarea rows="1"></textarea><div class="resize-handle"></div><div class="resize-row"></div></td><td class="drop-cell"><textarea rows="1"></textarea><div class="resize-handle"></div><div class="resize-row"></div></td><td class="drop-cell"><textarea rows="1"></textarea><div class="resize-handle"></div><div class="resize-row"></div></td>';
+  document.getElementById('tableBody').appendChild(row);
+  if(data){
+    var tas=row.querySelectorAll('textarea');
+    data.cells.forEach(function(v,i){ if(tas[i]) tas[i].value=v; });
+    var tds=row.querySelectorAll('td');
+    data.heights.forEach(function(h,i){ if(tds[i]&&h) tds[i].style.height=h; });
+  }
+  setupDropZones();
+  setupResize();
+  setupAutoSave(row);
+  resizeCanvas();
+  if(!silent) saveTable();
+}
+
+function setupAutoSave(row){
+  row.querySelectorAll('textarea').forEach(function(ta){
+    // ta.addEventListener('input', function(){ saveTable(); });
+    ta.addEventListener('input', function(){ autoResizeTextarea(ta); saveTable(); });
+  });
+}
+
+function calculateTotals(){
+  var dr=0,cr=0;
+  document.querySelectorAll('#tableBody tr').forEach(function(row){
+    var inputs=row.querySelectorAll('textarea');
+    dr+=Number(stripCommas(inputs[1].value))||0;
+    cr+=Number(stripCommas(inputs[3].value))||0;
+  });
+  document.getElementById('drTotal').value='₹'+formatIndian(dr);
+  document.getElementById('crTotal').value='₹'+formatIndian(cr);
+  saveTable();
+}
+
+function confirmClearAll(){
+  if(!confirm('Clear the table? Cards will NOT be deleted.')) return;
+  var tbody = document.getElementById('tableBody');
+  tbody.innerHTML = '';
+  for(var i=0; i<5; i++) addRow(true);
+  document.getElementById('drTotal').value='';
+  document.getElementById('crTotal').value='';
+  saveTable();
+  showToast('Table cleared!');
+}
+
+function saveCards(){
+  var cards=[];
+  document.querySelectorAll('#cardsContainer .card').forEach(function(card){
+    cards.push({
+      type: card.dataset.type,
+      mainParticular: card.dataset.mainparticular,
+      subLine: card.dataset.subline || '',
+      partners: card.dataset.partners || '',
+      amount: card.dataset.amount
+    });
+  });
+  localStorage.setItem(STORAGE_CARDS, JSON.stringify(cards));
+  var now=new Date();
+  document.getElementById('saveStatus').textContent='Saved at '+now.getHours()+':'+String(now.getMinutes()).padStart(2,'0');
+  showToast('Cards saved! ✅');
+}
+
+function loadCards(){
+  var raw=localStorage.getItem(STORAGE_CARDS);
+  if(!raw) return;
+  var cards=JSON.parse(raw);
+  cards.forEach(function(c){
+    createCard(c.type, c.mainParticular, c.amount, c.subLine||'', c.partners||'');
+  });
+}
+
+function confirmDeleteAllCards(){
+  if(!confirm('Delete ALL saved cards? This cannot be undone.')) return;
+  document.getElementById('cardsContainer').innerHTML='';
+  localStorage.removeItem(STORAGE_CARDS);
+  document.getElementById('saveStatus').textContent='';
+  showToast('All cards deleted!');
+}
+
+function parseAndEval(expr){
+  var safe = stripCommas(expr).replace(/[^0-9+\-*\/\.\s]/g,'').trim();
+  if(!safe) return null;
+  try {
+    var result = Function('"use strict"; return (' + safe + ')')();
+    return Math.round(result * 100) / 100;
+  } catch(e){ return null; }
+}
+
+function simplifyFraction(num, den){
+  function gcd(a,b){ return b===0?a:gcd(b,a%b); }
+  var g = gcd(Math.abs(num), Math.abs(den));
+  return (num/g) + '/' + (den/g);
+}
+
+function extractFractionLabel(expr){
+  var m = expr.match(/^(\d+)\s*\/\s*(\d+)/);
+  if(m) return simplifyFraction(parseInt(m[1]), parseInt(m[2]));
+  return null;
+}
+
+function generateCard(){
+  var input = document.getElementById('entryInput');
+  var rawText = input.value.trim();
+  if(!rawText) return;
+
+  var prefixMatch = rawText.match(/^(to|by)\s+/i);
+  if(prefixMatch){
+    var afterPrefix = rawText.slice(prefixMatch[0].length);
+
+    var fracPartnerRe = /([A-Za-z][A-Za-z\s']*?)\s+(\d+\s*\/\s*\d+)\s*\*?\s*([\d,]+)/g;
+    var fracMatches = [];
+    var fm;
+    var testStr = afterPrefix;
+    while((fm = fracPartnerRe.exec(testStr)) !== null){
+      fracMatches.push(fm);
+    }
+
+    if(fracMatches.length >= 1){
+      fracPartnerRe.lastIndex = 0;
+      var firstFM = fracPartnerRe.exec(afterPrefix);
+      var descriptionEndIdx = firstFM ? firstFM.index : afterPrefix.length;
+      var description = afterPrefix.slice(0, descriptionEndIdx).trim();
+
+      var fracPartnerRe2 = /([A-Za-z][A-Za-z\s']*?)\s+(\d+\s*\/\s*\d+)\s*\*?\s*([\d,]+)/g;
+      var partnerEntries = [];
+      var totalAmount = 0;
+      var fm2;
+      while((fm2 = fracPartnerRe2.exec(afterPrefix)) !== null){
+        var pName = fm2[1].trim();
+        var pFrac = fm2[2].replace(/\s/g,'');
+        var pAmtRaw = fm2[3];
+        var pAmt = Number(stripCommas(pAmtRaw));
+        var fracNum = parseInt(pFrac.split('/')[0]);
+        var fracDen = parseInt(pFrac.split('/')[1]);
+        var finalAmt = Math.round(pAmt * fracNum / fracDen * 100)/100;
+        var fracLabel = simplifyFraction(fracNum, fracDen);
+        totalAmount += finalAmt;
+        partnerEntries.push({ name: pName, fracLabel: fracLabel, amount: finalAmt });
+      }
+
+      if(partnerEntries.length > 0){
+        var baseAmt = 0;
+        if(partnerEntries.length > 0){
+          var fe = partnerEntries[0];
+          var fn = parseInt(fe.fracLabel.split('/')[0]);
+          var fd = parseInt(fe.fracLabel.split('/')[1]);
+          baseAmt = Math.round(fe.amount / fn * fd * 100) / 100;
+        }
+        var partnersDisplay = partnerEntries.map(function(p){
+          var label = p.name + "'s Capital A/c";
+          return label + '~' + p.fracLabel + '~' + formatIndian(baseAmt) + '~' + formatIndian(p.amount);
+        }).join('||');
+
+        var type = prefixMatch[1].toLowerCase() === 'by' ? 'CR' : 'DR';
+        var mainParticular = prefixMatch[1].charAt(0).toUpperCase() + prefixMatch[1].slice(1).toLowerCase()
+                             + ' ' + (description || 'Profit on Realisation transferred to Partners');
+
+        createCard(type, mainParticular, formatIndian(totalAmount), '', partnersDisplay);
+        input.value = '';
+        return;
+      }
+    }
+  }
+
+  var partnerDashPattern = /^(to|by)\s+(.+?)\s+((?:[a-zA-Z][a-zA-Z\s]*-\s*[\d,\/*+\-\.]+(?:=[\d\.]+)?\s*)+)$/i;
+  var partnerDashMatch = rawText.match(partnerDashPattern);
+
+  if(partnerDashMatch){
+    var prefix = partnerDashMatch[1];
+    var description = partnerDashMatch[2].trim();
+    var partnerStr = partnerDashMatch[3].trim();
+
+    var partnerEntries = [];
+    var re = /([a-zA-Z][a-zA-Z\s]*?)\s*-\s*([\d,\/*+\-\.]+)(?:=[\d\.]+)?/g;
+    var m;
+    var totalAmount = 0;
+    while((m = re.exec(partnerStr)) !== null){
+      var pName = m[1].trim();
+      var pExpr = m[2].trim();
+      var pAmt = parseAndEval(pExpr);
+      if(pAmt === null) pAmt = 0;
+      totalAmount += pAmt;
+      var fracLabel = extractFractionLabel(pExpr);
+      partnerEntries.push({ name: pName, fracLabel: fracLabel, amount: pAmt });
+    }
+
+    var partnersDisplay = partnerEntries.map(function(p){
+      var label = p.name + "'s Capital A/c";
+      return label + '~' + (p.fracLabel||'') + '~~' + formatIndian(p.amount);
+    }).join('||');
+
+    var type = prefix.toLowerCase() === 'by' ? 'CR' : 'DR';
+    var mainParticular = prefix + ' ' + description;
+    createCard(type, mainParticular, formatIndian(totalAmount), '', partnersDisplay);
+    input.value = '';
+    return;
+  }
+
+  var bracketPattern = /^(to|by)\s+(.+?)\s*\(([^)]+)\)\s*([\d,]+)?$/i;
+  var bracketMatch = rawText.match(bracketPattern);
+
+  if(bracketMatch){
+    var prefix = bracketMatch[1];
+    var mainPart = prefix + ' ' + bracketMatch[2].trim();
+    var bracketExpr = bracketMatch[3].trim();
+    var explicitAmount = bracketMatch[4] ? Number(stripCommas(bracketMatch[4])) : null;
+    var calcAmount = parseAndEval(bracketExpr);
+    var finalAmount = explicitAmount !== null ? explicitAmount : (calcAmount !== null ? calcAmount : '');
+    var type = prefix.toLowerCase() === 'by' ? 'CR' : 'DR';
+    var subLine = '(' + bracketExpr + ')';
+    createCard(type, mainPart, formatIndian(finalAmount), subLine, '');
+    input.value = '';
+    return;
+  }
+
+  var type = rawText.toLowerCase().startsWith('by ') ? 'CR' : 'DR';
+  var amountMatch = rawText.match(/([\d,]+)\s*$/);
+  var rawAmount = amountMatch ? amountMatch[1] : '';
+  var numericAmount = rawAmount ? Number(stripCommas(rawAmount)) : '';
+  var displayAmount = numericAmount !== '' ? formatIndian(numericAmount) : '';
+
+  var prefixWord = rawText.match(/^(to|by)\s+/i);
+  var prefix = prefixWord ? prefixWord[1].charAt(0).toUpperCase() + prefixWord[1].slice(1).toLowerCase() + ' ' : '';
+  var particulars = prefix + rawText
+    .replace(/^to\s+/i,'')
+    .replace(/^by\s+/i,'')
+    .replace(/([\d,]+)\s*$/,'')
+    .trim();
+  createCard(type, particulars, displayAmount, '', '');
+  input.value = '';
+}
+
+function createCard(type, mainParticular, amount, subLine, partners){
+  var card = document.createElement('div');
+  cardCount++;
+  card.id = 'card' + cardCount;
+  card.draggable = true;
+  card.dataset.type = type;
+  card.dataset.mainparticular = mainParticular;
+  card.dataset.subline = subLine || '';
+  card.dataset.partners = partners || '';
+  card.dataset.amount = amount;
+  card.className = type === 'DR' ? 'card' : 'card cr';
+
+  var particularHTML = '<div class="particular">' + escHtml(mainParticular);
+  if(subLine){
+    particularHTML += '<span class="sub-line">' + escHtml(subLine) + '</span>';
+  }
+  if(partners){
+    partners.split('||').forEach(function(entry){
+      if(!entry.trim()) return;
+      var parts = entry.split('~');
+      var pName   = parts[0] ? parts[0].trim() : '';
+      var pFrac   = parts[1] ? parts[1].trim() : '';
+      var pBase   = parts[2] ? parts[2].trim() : '';
+      var pResult = parts[3] ? parts[3].trim() : '';
+      if(pName){
+        var leftSpan = '<span>' + escHtml(pName);
+        if(pFrac && pBase){
+          leftSpan += '&nbsp;&nbsp;<span style="color:#666;font-size:11px;font-weight:500;">'
+                    + escHtml(pFrac) + ' × ' + escHtml(pBase) + '</span>';
+        }
+        leftSpan += '</span>';
+        var rightSpan = pResult
+          ? '<strong style="white-space:nowrap;color:#222;">= ₹' + escHtml(pResult) + '</strong>'
+          : '';
+        var lineHTML = '<span style="display:flex;justify-content:space-between;align-items:baseline;gap:4px;">'
+                     + leftSpan + rightSpan + '</span>';
+        particularHTML += '<span class="partner-line">' + lineHTML + '</span>';
+      }
+    });
+  }
+  particularHTML += '</div>';
+
+  card.innerHTML =
+    '<button class="card-del-btn" title="Delete card">✕</button>' +
+    '<div class="tag">' + type + '</div>' +
+    particularHTML +
+    '<div class="amount">₹' + amount + '</div>' +
+    '<small>Click to place</small>';
+
+  card.addEventListener('click', function(e){
+    if(e.target.classList.contains('card-del-btn')) return;
+    selectCard(card);
+  });
+
+  card.addEventListener('dragstart', function(e){
+    e.dataTransfer.setData('text/plain', card.id);
+    setTimeout(function(){ card.classList.add('selected'); highlightDropCells(); }, 0);
+  });
+  card.addEventListener('dragend', function(){
+    card.classList.remove('selected');
+    unhighlightDropCells();
+  });
+
+  card.querySelector('.card-del-btn').addEventListener('click', function(e){
+    e.stopPropagation();
+    if(card === selectedCard) cancelSelection();
+    if(confirm('Delete this card?')){ card.remove(); }
+  });
+  document.getElementById('cardsContainer').appendChild(card);
+}
+
+var selectedCard = null;
+var ghost = null;
+var escHint = null;
+
+function initClickSystem(){
+  ghost = document.getElementById('cardGhost');
+  escHint = document.getElementById('escHint');
+
+  document.addEventListener('mousemove', function(e){
+    if(!selectedCard || !ghost) return;
+    ghost.style.left = (e.clientX + 16) + 'px';
+    ghost.style.top  = (e.clientY - 24) + 'px';
+  });
+
+  document.addEventListener('keydown', function(e){
+    if(e.key === 'Escape') cancelSelection();
+  });
+}
+
+function selectCard(card){
+  if(selectedCard === card){ cancelSelection(); return; }
+  if(selectedCard) cancelSelection(true);
+  selectedCard = card;
+  card.classList.add('selected');
+
+  ghost.innerHTML = card.innerHTML;
+  ghost.className = '';
+  ghost.id = 'cardGhost';
+  if(card.classList.contains('cr')) ghost.style.borderLeftColor = '#1db56c';
+  else ghost.style.borderLeftColor = '#4d6fff';
+  ghost.style.display = 'block';
+
+  highlightDropCells();
+  escHint.style.display = 'block';
+}
+
+function cancelSelection(silent){
+  if(selectedCard){
+    selectedCard.classList.remove('selected');
+    selectedCard = null;
+  }
+  if(ghost) ghost.style.display = 'none';
+  unhighlightDropCells();
+  if(!silent && escHint) escHint.style.display = 'none';
+}
+
+function highlightDropCells(){
+  document.querySelectorAll('.drop-cell').forEach(function(c){ c.classList.add('card-selected-hover'); });
+}
+function unhighlightDropCells(){
+  document.querySelectorAll('.drop-cell').forEach(function(c){ c.classList.remove('card-selected-hover'); });
+}
+
+/* ── BUILD FULL PARTICULAR TEXT (shared by click & drag drop) ── */
+/* KEY FIX: starToX() converts any remaining * to × in the final text */
+function buildParticularText(card){
+  var mainP    = card.dataset.mainparticular || '';
+  var subL     = card.dataset.subline || '';
+  var partners = card.dataset.partners || '';
+
+  var fullParticular = starToX(mainP);
+  if(subL) fullParticular += '\n' + starToX(subL);
+  if(partners){
+    partners.split('||').forEach(function(entry){
+      if(!entry.trim()) return;
+      var parts = entry.split('~');
+      var pName   = parts[0] ? parts[0].trim() : '';
+      var pFrac   = parts[1] ? parts[1].trim() : '';
+      var pBase   = parts[2] ? parts[2].trim() : '';
+      var pResult = parts[3] ? parts[3].trim() : '';
+      if(pName){
+        var line = starToX(pName);
+        if(pFrac && pBase) line += '  ' + pFrac + ' × ' + pBase;
+        if(pResult) line += ' = ₹' + pResult;
+        fullParticular += '\n' + line;
+      }
+    });
+  }
+  return fullParticular;
+}
+
+function dropCardIntoCell(cell){
+  if(!selectedCard) return;
+  var card = selectedCard;
+  var inputs = cell.parentElement.querySelectorAll('textarea');
+  var fullParticular = buildParticularText(card);
+
+  if(card.dataset.type === 'DR'){
+    inputs[0].value = fullParticular;
+    inputs[1].value = card.dataset.amount;
+    autoResizeTextarea(inputs[0]);
+    autoResizeTextarea(inputs[1]);
+  } else {
+    inputs[2].value = fullParticular;
+    inputs[3].value = card.dataset.amount;
+    autoResizeTextarea(inputs[2]);
+    autoResizeTextarea(inputs[3]);
+  }
+  card.remove();
+  cancelSelection();
+  calculateTotals();
+  saveTable();
+  showToast('Entry placed ✓');
+}
+
+function escHtml(str){
+  return String(str)
+    .replace(/&/g,'&amp;')
+    .replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;');
+}
+
+document.getElementById('entryInput').addEventListener('keypress', function(e){ if(e.key==='Enter') generateCard(); });
+
+function setupDropZones(){
+  document.querySelectorAll('.drop-cell').forEach(function(cell){
+    if(cell._dropSetup) return;
+    cell._dropSetup = true;
+
+    cell.addEventListener('click', function(e){
+      if(selectedCard){
+        e.stopPropagation();
+        dropCardIntoCell(cell);
+      }
+    });
+
+    cell.addEventListener('dragover',function(e){
+      e.preventDefault();
+      cell.classList.add('drag-over');
+    });
+    cell.addEventListener('dragleave',function(){
+      cell.classList.remove('drag-over');
+    });
+    cell.addEventListener('drop',function(e){
+      e.preventDefault();
+      cell.classList.remove('drag-over');
+      var card=document.getElementById(e.dataTransfer.getData('text/plain'));
+      if(!card) return;
+      var inputs=cell.parentElement.querySelectorAll('textarea');
+      var fullParticular = buildParticularText(card);
+      if(card.dataset.type==='DR'){
+        inputs[0].value = fullParticular;
+        inputs[1].value = card.dataset.amount;
+        autoResizeTextarea(inputs[0]);
+        autoResizeTextarea(inputs[1]);
+      } else {
+        inputs[2].value = fullParticular;
+        inputs[3].value = card.dataset.amount;
+        autoResizeTextarea(inputs[2]);
+        autoResizeTextarea(inputs[3]);
+      }
+      card.classList.remove('selected');
+      card.remove();
+      calculateTotals();
+      saveTable();
+    });
+  });
+}
+
+function setupResize(){
+  document.querySelectorAll('.resize-handle').forEach(function(handle){
+    if(handle._resizeSetup) return;
+    handle._resizeSetup=true;
+    handle.onmousedown=function(e){
+      e.preventDefault(); e.stopPropagation();
+      var td=handle.parentElement,startX=e.pageX,startW=td.offsetWidth;
+      function onMove(e){ var w=Math.max(60,startW+(e.pageX-startX)); td.style.width=w+'px'; td.style.minWidth=w+'px'; }
+      function onUp(){ document.removeEventListener('mousemove',onMove); document.removeEventListener('mouseup',onUp); resizeCanvas(); saveTable(); }
+      document.addEventListener('mousemove',onMove); document.addEventListener('mouseup',onUp);
+    };
+  });
+  document.querySelectorAll('.resize-row').forEach(function(handle){
+    if(handle._rowSetup) return;
+    handle._rowSetup=true;
+    handle.onmousedown=function(e){
+      e.preventDefault(); e.stopPropagation();
+      var tr=handle.parentElement.parentElement,tds=tr.querySelectorAll('td'),startY=e.pageY,startH=tr.getBoundingClientRect().height;
+      function onMove(e){ var h=Math.max(36,startH+(e.pageY-startY)); tds.forEach(function(td){ td.style.height=h+'px'; td.style.lineHeight=h+'px'; }); }
+      function onUp(){ document.removeEventListener('mousemove',onMove); document.removeEventListener('mouseup',onUp); resizeCanvas(); saveTable(); }
+      document.addEventListener('mousemove',onMove); document.addEventListener('mouseup',onUp);
+    };
+  });
+}
+
+var canvas=document.getElementById('drawLayer');
+var wrapper=document.getElementById('tableWrapper');
+var ctx=canvas.getContext('2d');
+
+function resizeCanvas(){
+  var imgData=null;
+  if(canvas.width>0&&canvas.height>0){ try{ imgData=ctx.getImageData(0,0,canvas.width,canvas.height); }catch(e){} }
+  canvas.width=wrapper.scrollWidth;
+  canvas.height=wrapper.scrollHeight;
+  if(imgData) try{ ctx.putImageData(imgData,0,0); }catch(e){}
+}
+resizeCanvas();
+window.addEventListener('resize',resizeCanvas);
+
+var drawing=false;
+var tool='typing';
+
+function setTool(t){
+  tool=t;
+  ['typingBtn','pencilBtn','eraserBtn'].forEach(function(id){ document.getElementById(id).classList.remove('tool-active'); });
+  if(t==='typing'){
+    canvas.style.pointerEvents='none'; canvas.style.zIndex='0';
+    document.getElementById('typingBtn').classList.add('tool-active');
+  } else if(t==='pencil'){
+    canvas.style.pointerEvents='auto'; canvas.style.zIndex='99'; canvas.style.cursor='crosshair';
+    document.getElementById('pencilBtn').classList.add('tool-active');
+  } else {
+    canvas.style.pointerEvents='auto'; canvas.style.zIndex='99'; canvas.style.cursor='cell';
+    document.getElementById('eraserBtn').classList.add('tool-active');
+  }
+}
+setTool('typing');
+
+canvas.addEventListener('dragover',function(e){
+  e.preventDefault();
+  var el=getElementBelowCanvas(e);
+  if(el) el.dispatchEvent(new DragEvent('dragover',{bubbles:true,cancelable:true,dataTransfer:e.dataTransfer}));
+});
+canvas.addEventListener('drop',function(e){
+  e.preventDefault();
+  var el=getElementBelowCanvas(e);
+  if(el) el.dispatchEvent(new DragEvent('drop',{bubbles:true,cancelable:true,dataTransfer:e.dataTransfer}));
+});
+canvas.addEventListener('dragleave',function(e){
+  var el=getElementBelowCanvas(e);
+  if(el) el.dispatchEvent(new DragEvent('dragleave',{bubbles:true,dataTransfer:e.dataTransfer}));
+});
+function getElementBelowCanvas(e){
+  canvas.style.pointerEvents='none';
+  var el=document.elementFromPoint(e.clientX,e.clientY);
+  canvas.style.pointerEvents=tool==='typing'?'none':'auto';
+  return el;
+}
+
+canvas.addEventListener('mousedown',function(e){
+  if(tool==='typing') return;
+  drawing=true; ctx.beginPath(); ctx.moveTo(e.offsetX,e.offsetY);
+});
+window.addEventListener('mousemove',function(e){
+  if(!drawing) return;
+  var r=canvas.getBoundingClientRect();
+  var x=e.clientX-r.left, y=e.clientY-r.top;
+  ctx.lineCap='round'; ctx.lineJoin='round';
+  if(tool==='eraser'){ ctx.globalCompositeOperation='destination-out'; ctx.lineWidth=30; }
+  else { ctx.globalCompositeOperation='source-over'; ctx.strokeStyle='#111'; ctx.lineWidth=2.5; }
+  ctx.lineTo(x,y); ctx.stroke();
+});
+window.addEventListener('mouseup',function(){ if(!drawing)return; drawing=false; ctx.beginPath(); });
+
+loadTable();
+loadCards();
+setupDropZones();
+setupResize();
+initClickSystem();
+</script>
+</body>
+</html>
